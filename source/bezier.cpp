@@ -1,5 +1,5 @@
 //
-//  main.cpp
+//  bezier.cpp
 //  CG_ex5
 //
 //  Created by Ben Benchaya on 06/01/16.
@@ -7,14 +7,21 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <vector>
 #include "Vector3f.h"
 #include <GLUT/GLUT.h>
 
+#define ESC 27
+
 #define far 200.0
 #define near 2.0
+#define bufSize 128
+#define maxSize 512 //what is maxsize?
+bool press;
 float camAngle;
+GLint hits;
 
 using namespace std;
 
@@ -25,11 +32,11 @@ void drawAxis(){
     float green[4] = {0, 1, 0, 1};
     float blue[4] = {0, 0, 1, 1};
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red);
-    glVertex3fv(Vector3f(50, 0, 0));  glVertex3fv(Vector3f(0, 0, 0));
+    glVertex3fv(Vector3f(50, 0, 0));  glVertex3fv(Vector3f(-50, 0, 0));
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, green);
-    glVertex3fv(Vector3f(0, 50, 0));  glVertex3fv(Vector3f(0, 0, 0));
+    glVertex3fv(Vector3f(0, 50, 0));  glVertex3fv(Vector3f(0,-50, 0));
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
-    glVertex3fv(Vector3f(0, 0, 50));  glVertex3fv(Vector3f(0, 0, 0));
+    glVertex3fv(Vector3f(0, 0, 50));  glVertex3fv(Vector3f(0, 0, -50));
     glEnd();
     
 }
@@ -100,7 +107,7 @@ void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum)
 void drawShape(){
     float red[4] = {1, 0, 0, 1};
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red);
-    glutSolidSphere(0.3, 50, 50);
+    glutSolidSphere(1.0, 50, 50);
 }
 
 void splitCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum)
@@ -116,13 +123,13 @@ void makeStraight(vector <Vector3f> &curve, int curveIndx, int degree){
 void derevativeContinuity(vector <Vector3f> &curve, int vertexIndx, int degree){
 }
 
-void startPicking(){
-    //    GLuint selectionBuf[maxSize];
-    GLint hits, view[4];
-    //    glSelectBuffer(maxSize * 12, selectionBuf); //declare buffer for input in selection mode
+void startPicking(GLuint *selectionBuf){
+    GLint hits;
+    glSelectBuffer(maxSize * 12, selectionBuf); //declare buffer for input in selection mode
     glRenderMode(GL_SELECT); //change to selecting mode
     glInitNames();			//initialize names stack
     glPushName(-1);			//push name
+    //======================
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -142,6 +149,26 @@ void processHits(GLint hits, GLuint *buffer){
 }
 
 void mouse(int button, int state, int x, int y){
+    GLint viewport[4];
+    GLuint selectionBuf[bufSize];
+    glGetIntegerv(GL_VIEWPORT,viewport); //reading viewport parameters
+    
+    press=!press;
+		  if(press){
+              glMatrixMode(GL_PROJECTION);
+              glPushMatrix();	//saves current projection matrix
+              glLoadIdentity();
+              startPicking(selectionBuf); //preper selection mode
+              gluPickMatrix((GLdouble) x,(GLdouble) viewport[3]-y,1,1,viewport);
+              gluPerspective(camAngle,1,near,far);
+              glMatrixMode(GL_MODELVIEW);
+//              drawCurve(<#vector<Vector3f> &curve#>, GL_SELECT, <#int degree#>, <#int subNum#>);
+              hits=glRenderMode(GL_RENDER); //gets hits number
+              glMatrixMode(GL_PROJECTION);
+              glPopMatrix(); //restores projection matrix
+              glMatrixMode(GL_MODELVIEW);
+              processHits(hits,selectionBuf); //check hits
+          }
 }
 
 void motion(int x, int y){
@@ -205,12 +232,12 @@ void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int
     }
 }
 
-void init()
-{
+void init(){
     
     glLineWidth(4);
     glClearColor(0, 0, 0, 1);  //black
     camAngle = 60.0;
+    press = false;
     
     glEnable(GL_MAP2_VERTEX_3);
     //glEnable(GL_MAP1_VERTEX_3);
@@ -251,12 +278,35 @@ void timerFunc(int value){
 
 void readKey(unsigned char key, int x, int y){
     switch (key){
-        case 'd': ;
+        case '1':
+            break;
+        case '2':
+            break;
+        case '3':
+            break;
+        case '4':
+            break;
+        case '5':
+            break;
+        case '6':
+            break;
+        case '7':
+            break;
+        case '8':
+            break;
+        case '9':
+            break;
+        case 'd':
+            //3d mode
+            break;
+        case ESC:
+            exit(0);
     }
 
 }
 
 void display(void){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glFlush();
 }
