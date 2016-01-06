@@ -18,18 +18,27 @@ float camAngle;
 
 using namespace std;
 
-void drawAxis()
-{
+void drawAxis(){
+    glLineWidth(1.5);
+    glBegin(GL_LINES);
+    float red[4] = {1, 0, 0, 1};
+    float green[4] = {0, 1, 0, 1};
+    float blue[4] = {0, 0, 1, 1};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red);
+    glVertex3fv(Vector3f(50, 0, 0));  glVertex3fv(Vector3f(0, 0, 0));
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, green);
+    glVertex3fv(Vector3f(0, 50, 0));  glVertex3fv(Vector3f(0, 0, 0));
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
+    glVertex3fv(Vector3f(0, 0, 50));  glVertex3fv(Vector3f(0, 0, 0));
+    glEnd();
     
 }
 
-void changePointPosition(vector <Vector3f> &control, Vector3f diff)
-{
+void changePointPosition(vector <Vector3f> &control, Vector3f diff){
     
 }
 
-void drawCurve(vector <Vector3f> &curve, GLenum mode, int degree, int subNum)
-{
+void drawCurve(vector <Vector3f> &curve, GLenum mode, int degree, int subNum){
     
 }
 
@@ -41,7 +50,6 @@ void drawCurve(vector <Vector3f> &curve, GLenum mode, int degree, int subNum)
 //////////////////////////////
 void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum)
 {
-    
     GLfloat curve[degree2][degree][3];
     
     for (int o = 0; o < subNum; o++)
@@ -89,8 +97,10 @@ void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum)
     }
 }
 
-void drawShape()
-{
+void drawShape(){
+    float red[4] = {1, 0, 0, 1};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red);
+    glutSolidSphere(0.3, 50, 50);
 }
 
 void splitCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum)
@@ -100,32 +110,41 @@ void splitCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum
 
 void deleteCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum){}
 
-void makeStraight(vector <Vector3f> &curve, int curveIndx, int degree)
-{
+void makeStraight(vector <Vector3f> &curve, int curveIndx, int degree){
 }
 
-void derevativeContinuity(vector <Vector3f> &curve, int vertexIndx, int degree)
-{
+void derevativeContinuity(vector <Vector3f> &curve, int vertexIndx, int degree){
 }
 
-void startPicking()
-{
-    glSelectBuffer(maxSize * 12, selectionBuf); //declare buffer for input in selection mode
+void startPicking(){
+    //    GLuint selectionBuf[maxSize];
+    GLint hits, view[4];
+    //    glSelectBuffer(maxSize * 12, selectionBuf); //declare buffer for input in selection mode
     glRenderMode(GL_SELECT); //change to selecting mode
     glInitNames();			//initialize names stack
     glPushName(-1);			//push name
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    //    gluPickMatrix(x, y, 1.0, 1.0, view);
+    //    gluPerspective(FOV, 1.0, Z_NEAR, Z_FAR);
+    glMatrixMode(GL_MODELVIEW);
+    //    drawObjects(GL_SELECT);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    hits = glRenderMode(GL_RENDER);
+    //    processPicks(hits, selectionBuf);
+    //    display();
+    
 }
 
-void processHits(GLint hits, GLuint *buffer)
-{
+void processHits(GLint hits, GLuint *buffer){
 }
 
-void mouse(int button, int state, int x, int y)
-{
+void mouse(int button, int state, int x, int y){
 }
 
-void motion(int x, int y)
-{
+void motion(int x, int y){
 }
 
 /////////////////////////////
@@ -226,23 +245,23 @@ void init()
     glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, low_sh);
 }
 
-void timerFunc(int value)
-{
+void timerFunc(int value){
     
 }
 
-void readKey(unsigned char key, int x, int y)
-{
+void readKey(unsigned char key, int x, int y){
+    switch (key){
+        case 'd': ;
+    }
+
 }
 
-void display(void)
-{
+void display(void){
     
     glFlush();
 }
 
-void reshape(int width, int height)
-{
+void reshape(int width, int height){
     glViewport(0, 0, (GLsizei)width, (GLsizei)height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -252,8 +271,7 @@ void reshape(int width, int height)
     glTranslatef(0.0f, 0, -100.0f);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(800, 800);
