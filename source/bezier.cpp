@@ -19,11 +19,29 @@
 #define near 2.0
 #define bufSize 128
 #define maxSize 512 //what is maxsize?
-bool press;
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 800
+#define ROTATION_DEGREE 1
+using namespace std;
+
+vector <Vector3f> points;
+vector <Vector3f> curve;
+Vector3f firstPoint;
+Vector3f lastPoint;
+float last_Point_X;
+int old_x;
+int old_y;
+int dotIndex = -1;
+int control_points_num;
+const float POINT_SIZE = 1.0f;
+bool left_button_pressed;
+bool middle_button_pressed;
+bool right_button_pressed;
+bool design_mode;
 float camAngle;
 GLint hits;
 
-using namespace std;
+
 
 void drawAxis(){
     glLineWidth(1.5);
@@ -41,11 +59,27 @@ void drawAxis(){
     
 }
 
+
 void changePointPosition(vector <Vector3f> &control, Vector3f diff){
     
 }
 
+void drawShape(){
+    float red[4] = {1, 0, 0, 1};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red);
+    glutSolidSphere(POINT_SIZE, 50, 50);
+}
+
 void drawCurve(vector <Vector3f> &curve, GLenum mode, int degree, int subNum){
+    for (int j = 1; j <= control_points_num; j++) {
+        drawShape();
+        curve.push_back(Vector3f(j,j-1,0));
+    }
+    glBegin(GL_LINE_STRIP);
+    for (int i = 0; i < curve.size(); i++)
+        glVertex3f(curve.at(i).x, curve.at(i).y, curve.at(i).z);
+    glEnd();
+    
     
 }
 
@@ -55,8 +89,7 @@ void drawCurve(vector <Vector3f> &curve, GLenum mode, int degree, int subNum){
 //degree2 is the degree of each polynom in v
 //subNum is number of sub curve, how many parts in the whole curve
 //////////////////////////////
-void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum)
-{
+void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum){
     GLfloat curve[degree2][degree][3];
     
     for (int o = 0; o < subNum; o++)
@@ -90,28 +123,18 @@ void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum)
             for (int j = 0; j < 8; j++) {
                 
                 glBegin(GL_QUAD_STRIP);
-                for (int i = 0; i <= 30; i++)
-                {
+                for (int i = 0; i <= 30; i++){
                     glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
                     glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)(j + 1) / 8.0);
                 }
                 glEnd();
                 
             }
-            
-            
         }
     }
 }
 
-void drawShape(){
-    float red[4] = {1, 0, 0, 1};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red);
-    glutSolidSphere(1.0, 50, 50);
-}
-
-void splitCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum)
-{
+void splitCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum){
     
 }
 
@@ -148,30 +171,85 @@ void startPicking(GLuint *selectionBuf){
 void processHits(GLint hits, GLuint *buffer){
 }
 
+void display(void){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    drawAxis();
+    drawCurve(curve, GL_RENDER, ROTATION_DEGREE, control_points_num);
+    glFlush();
+}
+
 void mouse(int button, int state, int x, int y){
     GLint viewport[4];
     GLuint selectionBuf[bufSize];
     glGetIntegerv(GL_VIEWPORT,viewport); //reading viewport parameters
     
-    press=!press;
-		  if(press){
-              glMatrixMode(GL_PROJECTION);
-              glPushMatrix();	//saves current projection matrix
-              glLoadIdentity();
-              startPicking(selectionBuf); //preper selection mode
-              gluPickMatrix((GLdouble) x,(GLdouble) viewport[3]-y,1,1,viewport);
-              gluPerspective(camAngle,1,near,far);
-              glMatrixMode(GL_MODELVIEW);
-//              drawCurve(<#vector<Vector3f> &curve#>, GL_SELECT, <#int degree#>, <#int subNum#>);
-              hits=glRenderMode(GL_RENDER); //gets hits number
-              glMatrixMode(GL_PROJECTION);
-              glPopMatrix(); //restores projection matrix
-              glMatrixMode(GL_MODELVIEW);
-              processHits(hits,selectionBuf); //check hits
-          }
+    //    press=!press;
+    //		  if(press){
+    //              glMatrixMode(GL_PROJECTION);
+    //              glPushMatrix();	//saves current projection matrix
+    //              glLoadIdentity();
+    //              startPicking(selectionBuf); //preper selection mode
+    //              gluPickMatrix((GLdouble) x,(GLdouble) viewport[3]-y,1,1,viewport);
+    //              gluPerspective(camAngle,1,near,far);
+    //              glMatrixMode(GL_MODELVIEW);
+    ////              drawCurve(<#vector<Vector3f> &curve#>, GL_SELECT, <#int degree#>, <#int subNum#>);
+    //              hits=glRenderMode(GL_RENDER); //gets hits number
+    //              glMatrixMode(GL_PROJECTION);
+    //              glPopMatrix(); //restores projection matrix
+    //              glMatrixMode(GL_MODELVIEW);
+    //              processHits(hits,selectionBuf); //check hits
+    //          }
+    //
+    switch (button) {
+        case GLUT_LEFT_BUTTON:
+            left_button_pressed = !left_button_pressed;
+            break;
+        case GLUT_MIDDLE_BUTTON:
+            middle_button_pressed = !middle_button_pressed;
+            break;
+        case GLUT_RIGHT_BUTTON:
+            right_button_pressed = !right_button_pressed;
+    }
+    
 }
 
 void motion(int x, int y){
+    if (left_button_pressed) {
+        if (old_x - x > 0){
+            glRotatef(-ROTATION_DEGREE, 0, 1, 1);
+            display();
+            old_x = x;
+        }
+        else if (old_x - x < 0){
+            glRotatef(ROTATION_DEGREE, 0, 1, 1);
+            display();
+            old_x = x;
+        }
+        else if (old_y - y > 0){
+            glRotatef(-ROTATION_DEGREE, 1, 0, 1);
+            display();
+            old_y = y;
+        }
+        else if (old_y - y < 0){
+            glRotatef(ROTATION_DEGREE, 1, 0, 1);
+            display();
+            old_y = y;
+        }
+        
+    }
+    else if (middle_button_pressed){}
+    else if (right_button_pressed){
+        if (old_y - y > 0){
+            glTranslatef(0, 0, 5);
+            display();
+            old_y = y;
+        }
+        else{
+            glTranslatef(0, 0, -5);
+            display();
+            old_y = y;
+        }
+    }
 }
 
 /////////////////////////////
@@ -182,8 +260,7 @@ void motion(int x, int y){
 //degree2 is the degree of polynom in another dymention
 //subNum is number of sub curve, how many parts in the whole curve
 //////////////////////////////
-void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int degree, int degree2,int subNum)
-{
+void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int degree, int degree2,int subNum){
     for (int i = 0; i < contour.size(); i++)
         printf("y(%d) = %f, ", i, contour[i].y);
     printf("\n");
@@ -237,7 +314,16 @@ void init(){
     glLineWidth(4);
     glClearColor(0, 0, 0, 1);  //black
     camAngle = 60.0;
-    press = false;
+    left_button_pressed = false;
+    middle_button_pressed = false;
+    right_button_pressed = false;
+    design_mode = true;
+    old_x = WINDOW_WIDTH / 2;
+    old_y = WINDOW_HEIGHT / 2;
+    control_points_num = 0;
+    last_Point_X = 0;
+    firstPoint = Vector3f(0,0,0);
+    lastPoint = Vector3f(last_Point_X, 0, 0);
     
     glEnable(GL_MAP2_VERTEX_3);
     //glEnable(GL_MAP1_VERTEX_3);
@@ -248,28 +334,26 @@ void init(){
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     
-    glEnable(GL_COLOR_MATERIAL);
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
     //GLfloat light_direction[]={0,-1,0};
-    //GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 }; //color
+    GLfloat light_ambient[] = { 0.5, 0.5, 0.5, 1.0 }; //color
     GLfloat light_diffuse[] = { 0.0, 1.0, 0.5, 1.0 }; //color
     GLfloat light_specular[] = { 0.0, 0.0, 0.5, 1.0 };
-    GLfloat light_position[] = { 0,0.0,1,0 };
+//    GLfloat light_position[] = { 0,0.0,1,0 };
     //GLfloat angle[] = {20.0};
-    //glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+//    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
     
     GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
     GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
     GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
-    GLfloat low_sh[] = { 5.0 };
+    //    GLfloat low_sh[] = { 5.0 };
     
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, low_sh);
+    //    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, low_sh);
 }
 
 void timerFunc(int value){
@@ -278,37 +362,72 @@ void timerFunc(int value){
 
 void readKey(unsigned char key, int x, int y){
     switch (key){
+        case '0':
+            design_mode = true;
+            control_points_num = 0;
+            display();
+            break;
         case '1':
+            design_mode = true;
+            control_points_num = 1;
+            display();
             break;
         case '2':
+            design_mode = true;
+            control_points_num = 2;
+            display();
             break;
         case '3':
+            design_mode = true;
+            control_points_num = 3;
+            display();
             break;
         case '4':
+            design_mode = true;
+            control_points_num = 4;
+            display();
             break;
         case '5':
+            design_mode = true;
+            control_points_num = 5;
+            display();
             break;
         case '6':
+            design_mode = true;
+            control_points_num = 6;
+            display();
             break;
         case '7':
+            design_mode = true;
+            control_points_num = 7;
+            display();
             break;
         case '8':
+            design_mode = true;
+            control_points_num = 8;
+            display();
             break;
         case '9':
+            design_mode = true;
+            control_points_num = 9;
+            display();
             break;
         case 'd':
+            design_mode = false;
             //3d mode
+            //            calcSurface(<#vector<Vector3f> &contour#>, <#vector<Vector3f> &contSurface#>, <#int degree#>, <#int degree2#>, <#int subNum#>)
+            //            drawSurface(<#vector<Vector3f> &surface#>, <#int degree#>, <#int degree2#>, <#int subNum#>)
+            break;
+        case 'r':
+            init();
+            glLoadIdentity();
+            glTranslatef(0.0f, 0, -100.0f);
+            display();
             break;
         case ESC:
             exit(0);
     }
-
-}
-
-void display(void){
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glFlush();
 }
 
 void reshape(int width, int height){
