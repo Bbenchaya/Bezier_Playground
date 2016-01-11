@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
+#include <iostream>
 #include <vector>
 
 #include "Vector3f.h"

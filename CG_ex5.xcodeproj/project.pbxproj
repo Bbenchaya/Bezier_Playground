@@ -64,7 +64,7 @@
 				F08DAC001C43BB8000E23949 /* LICENSE */,
 				F08DAC011C43BB8000E23949 /* README.md */,
 				599504281C3D3AE4005B2A3E /* include */,
-				599504271C3D3AD4005B2A3E /* src */,
+				599504271C3D3AD4005B2A3E /* source */,
 			);
 			sourceTree = "<group>";
 		};
@@ -76,13 +76,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		599504271C3D3AD4005B2A3E /* src */ = {
+		599504271C3D3AD4005B2A3E /* source */ = {
 			isa = PBXGroup;
 			children = (
 				F0CE8E291C4418A200F13877 /* Bezier.cpp */,
 				599504201C3D3A9C005B2A3E /* Scene.cpp */,
 			);
-			name = src;
+			name = source;
 			path = CG_ex5;
 			sourceTree = "<group>";
 		};

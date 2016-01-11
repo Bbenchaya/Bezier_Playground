@@ -22,7 +22,7 @@
 
 using namespace std;
 
-vector <Bezier> curves;
+vector<Bezier> curves;
 int old_x;
 int old_y;
 int dotIndex = -1;
@@ -291,12 +291,20 @@ void motion(int x, int y){
     else if (middle_button_pressed){}
     else if (right_button_pressed){
         if (old_y - y > 0){
-            glTranslatef(0, 0, 5);
+            camAngle = fmax(15, camAngle - 0.5);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluPerspective(camAngle, 1, near, far);
+            glMatrixMode(GL_MODELVIEW);
             display();
             old_y = y;
         }
         else{
-            glTranslatef(0, 0, -5);
+            camAngle = fmin(140, camAngle + 0.5);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluPerspective(camAngle, 1, near, far);
+            glMatrixMode(GL_MODELVIEW);
             display();
             old_y = y;
         }
