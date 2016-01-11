@@ -12,6 +12,7 @@
 		5995042C1C3D3B65005B2A3E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5995042B1C3D3B65005B2A3E /* OpenGL.framework */; };
 		5995042E1C3D3B75005B2A3E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5995042D1C3D3B75005B2A3E /* Cocoa.framework */; };
 		F08DAC021C43BB8000E23949 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = F08DAC011C43BB8000E23949 /* README.md */; };
+		F0CE8E2A1C4418A200F13877 /* Bezier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F0CE8E291C4418A200F13877 /* Bezier.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -35,6 +36,8 @@
 		5995042F1C3D3BDF005B2A3E /* Vector3f.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Vector3f.h; path = ../include/Vector3f.h; sourceTree = "<group>"; };
 		F08DAC001C43BB8000E23949 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		F08DAC011C43BB8000E23949 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		F0CE8E291C4418A200F13877 /* Bezier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Bezier.cpp; path = source/Bezier.cpp; sourceTree = SOURCE_ROOT; };
+		F0CE8E2B1C4418BB00F13877 /* Bezier.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = Bezier.hpp; path = include/Bezier.hpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +79,7 @@
 		599504271C3D3AD4005B2A3E /* src */ = {
 			isa = PBXGroup;
 			children = (
+				F0CE8E291C4418A200F13877 /* Bezier.cpp */,
 				599504201C3D3A9C005B2A3E /* Scene.cpp */,
 			);
 			name = src;
@@ -85,6 +89,7 @@
 		599504281C3D3AE4005B2A3E /* include */ = {
 			isa = PBXGroup;
 			children = (
+				F0CE8E2B1C4418BB00F13877 /* Bezier.hpp */,
 				5995042F1C3D3BDF005B2A3E /* Vector3f.h */,
 			);
 			name = include;
@@ -147,6 +152,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F0CE8E2A1C4418A200F13877 /* Bezier.cpp in Sources */,
 				F08DAC021C43BB8000E23949 /* README.md in Sources */,
 				599504211C3D3A9C005B2A3E /* Scene.cpp in Sources */,
 			);
