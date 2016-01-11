@@ -194,33 +194,29 @@ void drawCurves(){
 
 void drawControlPoints(){
     float blue[4] = {0, 0, 1, 1};
-    float white[4] = {1, 1, 1, 1};
-    //    for (int i = 0; i < 4; i++) {
-    //        glTranslatef(1, 1, 0);
-    //        glutSolidSphere(1, 20, 20);
-    //    }
+    float gray[4] = {0.5, 0.5, 0.5, 1};
     for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
         Vector3f point = curve->getPoint(0);
-        glLoadIdentity();
+        glPushMatrix();
         glTranslatef(point.x, point.y, point.z);
-        //        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
-        printf("x: %f y: %f z: %f\n", point.x, point.y, point.z);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
         glutSolidSphere(POINT_RADIUS, 20, 20);
+        glPopMatrix();
         for (int i = 1; i < curve->getNumOfPoints() - 1; i++) {
             point = curve->getPoint(i);
-            glLoadIdentity();
+            glPushMatrix();
             glTranslatef(point.x, point.y, point.z);
-            //            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, white);
-            printf("x: %f y: %f z: %f\n", point.x, point.y, point.z);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, gray);
             glutSolidSphere(POINT_RADIUS, 20, 20);
+            glPopMatrix();
         }
         if (curve->isRightmost()) {
             Vector3f point = curve->getPoint(curve->getNumOfPoints() - 1);
-            glLoadIdentity();
+            glPushMatrix();
             glTranslatef(point.x, point.y, point.z);
-            //            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
-            printf("x: %f y: %f z: %f\n", point.x, point.y, point.z);
+            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
             glutSolidSphere(POINT_RADIUS, 20, 20);
+            glPopMatrix();
         }
     }
 }
