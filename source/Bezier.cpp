@@ -15,7 +15,7 @@ Bezier::Bezier(int numOfPoints, Vector3f *points){
     }
     leftmost = rightmost = false;
     this->numOfPoints = numOfPoints;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < DEPTH_OF_PASCAL_TRIANGLE; i++) {
         binom[i] = new float[i + 1];
         binom[i][0] = 1;
         for (int j = 1; j < i; j++) {

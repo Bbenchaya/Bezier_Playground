@@ -19,6 +19,7 @@
 #define ROTATION_DEGREE 1
 #define RESOLUTION 50
 #define POINT_RADIUS 1
+#define INITIAL_CURVE_LENGTH 15.0
 
 using namespace std;
 
@@ -428,6 +429,41 @@ void mouseMotion(int x, int y){
 //    }
 //}
 
+void generateCurves(){
+    Vector3f *v1 = new Vector3f[numOfControlPointsPerCurve + 2];
+    Vector3f *v2 = new Vector3f[numOfControlPointsPerCurve + 2];
+    Vector3f *v3 = new Vector3f[numOfControlPointsPerCurve + 2];
+    float num = (float) (numOfControlPointsPerCurve + 1);
+    float step = INITIAL_CURVE_LENGTH / num;
+    for (int i = 0; i < numOfControlPointsPerCurve + 2; i++) {
+        float iFloat = (float) i;
+        v1[i] = Vector3f(iFloat * step, iFloat * step, 0);
+        v2[i] = Vector3f(INITIAL_CURVE_LENGTH + iFloat * step, num * step, 0);
+        v3[i] = Vector3f(2 * INITIAL_CURVE_LENGTH + iFloat * step, (num - iFloat) * step, 0);
+    }
+    Bezier b1(numOfControlPointsPerCurve + 2, v1);
+    Bezier b2(numOfControlPointsPerCurve + 2, v2);
+    Bezier b3(numOfControlPointsPerCurve + 2, v3);
+    b1.setExtremum(LEFTMOST);
+    b3.setExtremum(RIGHTMOST);
+    curves.push_back(b1);
+    curves.push_back(b2);
+    curves.push_back(b3);
+}
+
+void initLights(){
+    GLfloat light_ambient[] = {0.5, 0.5, 0.5};
+    GLfloat light_diffuse[] = {0, 0.5, 0.5};
+    GLfloat light_specular[] = {0, 0.0, 0.5};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    glShadeModel(GL_SMOOTH);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+}
+
 void init(){
     camAngle = 60.0;
     left_button_pressed = false;
@@ -455,38 +491,27 @@ void init(){
 //    glEnable(GL_AUTO_NORMAL);
 //    glEnable(GL_NORMALIZE);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
+//    glEnable(GL_LIGHTING);
+//    glEnable(GL_LIGHT0);
     //GLfloat light_direction[]={0,-1,0};
-    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
-    GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
-    GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
+//    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
+//    GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
+//    GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
 //    GLfloat light_position[] = { 0,0.0,1,0 };
     //GLfloat angle[] = {20.0};
-    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+//    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+//    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+//    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
 //    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
-    GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
-    GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
+//    GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
+//    GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
+//    GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
 //    GLfloat low_sh[] = { 5.0 };
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
-//    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, low_sh);
-//    start with 3 cubic Beziers
-    Vector3f v1[4] = {Vector3f(0, 0, 0), Vector3f(4, 8, 0), Vector3f(8, 12, 0), Vector3f(12, 13, 0)};
-    Vector3f v2[4] = {Vector3f(12, 13, 0), Vector3f(16, 13, 0), Vector3f(20, 13, 0), Vector3f(24, 13, 0)};
-    Vector3f v3[4] = {Vector3f(24, 13, 0), Vector3f(28, 12, 0), Vector3f(32, 8, 0), Vector3f(36, 0, 0)};
-    Bezier b1(4, v1);
-    Bezier b2(4, v2);
-    Bezier b3(4, v3);
-    b1.setExtremum(LEFTMOST);
-    b3.setExtremum(RIGHTMOST);
-    curves.push_back(b1);
-    curves.push_back(b2);
-    curves.push_back(b3);
+//    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
+//    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
+//    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
+    initLights();
+    generateCurves();
 }
 
 //void timerFunc(int value){
@@ -495,9 +520,12 @@ void init(){
 
 void readKey(unsigned char key, int x, int y){
     if ('0' <= key && key <= '9') {
-        cout << "Design mode" << endl;
+        cout << "Design mode. Number of inner control points per curve: " << key << endl;
         design_mode = true;
         numOfControlPointsPerCurve = key - 48; // map key's ASCII value to its symbolic value
+        curves.clear();
+        numOfCurves = 3;
+        generateCurves();
         display();
         return;
     }
@@ -535,7 +563,7 @@ int main(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(800, 800);
-    //glutInitWindowPosition(150, 50);
+    glutInitWindowPosition(150, 50);
     glutCreateWindow("Bezier's playground");
     init();
     glutKeyboardFunc(readKey);

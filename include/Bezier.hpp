@@ -21,7 +21,7 @@
 
 #define LEFTMOST 0
 #define RIGHTMOST 1
-#define NUM_OF_POINTS_IN_CURVE 4
+#define DEPTH_OF_PASCAL_TRIANGLE 11
 
 class Bezier {
     
@@ -30,7 +30,7 @@ private:
     int numOfPoints;
     bool leftmost;
     bool rightmost;
-    float *binom[10];
+    float *binom[DEPTH_OF_PASCAL_TRIANGLE];
     
 public:
     Bezier(int numOfPoints, Vector3f *points);
