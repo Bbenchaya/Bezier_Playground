@@ -7,6 +7,7 @@
 //
 
 #include "Bezier.hpp"
+#include "ControlPoint.hpp"
 
 #define ESC 27
 
@@ -24,6 +25,7 @@
 using namespace std;
 
 vector<Bezier> curves;
+vector<ControlPoint> controlPoints;
 int old_x;
 int old_y;
 int dotIndex = -1;
@@ -430,20 +432,37 @@ void mouseMotion(int x, int y){
 //}
 
 void generateCurves(){
-    Vector3f *v1 = new Vector3f[numOfControlPointsPerCurve + 2];
-    Vector3f *v2 = new Vector3f[numOfControlPointsPerCurve + 2];
-    Vector3f *v3 = new Vector3f[numOfControlPointsPerCurve + 2];
-    float num = (float) (numOfControlPointsPerCurve + 1);
+    Vector3f *v1 = new Vector3f[numOfControlPointsPerCurve];
+    Vector3f *v2 = new Vector3f[numOfControlPointsPerCurve];
+    Vector3f *v3 = new Vector3f[numOfControlPointsPerCurve];
+    float num = (float) (numOfControlPointsPerCurve - 1);
     float step = INITIAL_CURVE_LENGTH / num;
-    for (int i = 0; i < numOfControlPointsPerCurve + 2; i++) {
+    for (int i = 0; i < numOfControlPointsPerCurve; i++) {
         float iFloat = (float) i;
         v1[i] = Vector3f(iFloat * step, iFloat * step, 0);
         v2[i] = Vector3f(INITIAL_CURVE_LENGTH + iFloat * step, num * step, 0);
         v3[i] = Vector3f(2 * INITIAL_CURVE_LENGTH + iFloat * step, (num - iFloat) * step, 0);
     }
-    Bezier b1(numOfControlPointsPerCurve + 2, v1);
-    Bezier b2(numOfControlPointsPerCurve + 2, v2);
-    Bezier b3(numOfControlPointsPerCurve + 2, v3);
+    Bezier b1(numOfControlPointsPerCurve, v1);
+    Bezier b2(numOfControlPointsPerCurve, v2);
+    Bezier b3(numOfControlPointsPerCurve, v3);
+    /*
+     * After the curves are created, construct the vector of control points. Each control point holds a reference to its respective
+     * curve and the index of the control point in that curve, which relates to this specific control point.
+     * This enables easy picking of control points when trying to move them around the screen with the mouse.
+     */
+    for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+        ControlPoint point(i, &b1);
+        controlPoints.push_back(point);
+    }
+    for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+        ControlPoint point(i, &b2);
+        controlPoints.push_back(point);
+    }
+    for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+        ControlPoint point(i, &b3);
+        controlPoints.push_back(point);
+    }
     b1.setExtremum(LEFTMOST);
     b3.setExtremum(RIGHTMOST);
     curves.push_back(b1);
@@ -472,7 +491,7 @@ void init(){
     design_mode = true;
     old_x = WINDOW_WIDTH / 2;
     old_y = WINDOW_HEIGHT / 2;
-    numOfControlPointsPerCurve = 2;
+    numOfControlPointsPerCurve = 4;
     numOfCurves = 3;
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glMatrixMode(GL_PROJECTION);
@@ -518,12 +537,27 @@ void init(){
 //
 //}
 
+void recalibrateControlPoints(){
+    controlPoints.clear();
+    for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
+        for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+            ControlPoint point(i, &(*curve));
+            controlPoints.push_back(point);
+        }
+    }
+}
+
+void clearVectors(){
+    controlPoints.clear();
+    curves.clear();
+}
+
 void readKey(unsigned char key, int x, int y){
     if ('0' <= key && key <= '9') {
         cout << "Design mode. Number of inner control points per curve: " << key << endl;
         design_mode = true;
-        numOfControlPointsPerCurve = key - 48; // map key's ASCII value to its symbolic value
-        curves.clear();
+        numOfControlPointsPerCurve = key - 48 + 2; // map key's ASCII value to its symbolic value, add the two outer points
+        clearVectors();
         numOfCurves = 3;
         generateCurves();
         display();
@@ -539,6 +573,7 @@ void readKey(unsigned char key, int x, int y){
     }
     if (key == 'r' || key == 'R') {
         cout << "RESETTING SCENE" << endl;
+        clearVectors();
         init();
 //        glLoadIdentity();
 //        glTranslatef(0.0f, 0, -100.0f);

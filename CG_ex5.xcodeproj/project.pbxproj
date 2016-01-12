@@ -11,6 +11,7 @@
 		5995042A1C3D3B5C005B2A3E /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 599504291C3D3B5C005B2A3E /* GLUT.framework */; };
 		5995042C1C3D3B65005B2A3E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5995042B1C3D3B65005B2A3E /* OpenGL.framework */; };
 		5995042E1C3D3B75005B2A3E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5995042D1C3D3B75005B2A3E /* Cocoa.framework */; };
+		F03CB77A1C44F58A00B45AFA /* ControlPoint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F03CB7791C44F58A00B45AFA /* ControlPoint.cpp */; };
 		F08DAC021C43BB8000E23949 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = F08DAC011C43BB8000E23949 /* README.md */; };
 		F0CE8E2A1C4418A200F13877 /* Bezier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F0CE8E291C4418A200F13877 /* Bezier.cpp */; };
 /* End PBXBuildFile section */
@@ -34,6 +35,8 @@
 		5995042B1C3D3B65005B2A3E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		5995042D1C3D3B75005B2A3E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		5995042F1C3D3BDF005B2A3E /* Vector3f.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Vector3f.h; path = ../include/Vector3f.h; sourceTree = "<group>"; };
+		F03CB7791C44F58A00B45AFA /* ControlPoint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ControlPoint.cpp; path = source/ControlPoint.cpp; sourceTree = SOURCE_ROOT; };
+		F03CB77B1C44F59B00B45AFA /* ControlPoint.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = ControlPoint.hpp; path = include/ControlPoint.hpp; sourceTree = SOURCE_ROOT; };
 		F08DAC001C43BB8000E23949 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		F08DAC011C43BB8000E23949 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		F0CE8E291C4418A200F13877 /* Bezier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Bezier.cpp; path = source/Bezier.cpp; sourceTree = SOURCE_ROOT; };
@@ -80,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				F0CE8E291C4418A200F13877 /* Bezier.cpp */,
+				F03CB7791C44F58A00B45AFA /* ControlPoint.cpp */,
 				599504201C3D3A9C005B2A3E /* Scene.cpp */,
 			);
 			name = source;
@@ -90,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				F0CE8E2B1C4418BB00F13877 /* Bezier.hpp */,
+				F03CB77B1C44F59B00B45AFA /* ControlPoint.hpp */,
 				5995042F1C3D3BDF005B2A3E /* Vector3f.h */,
 			);
 			name = include;
@@ -152,6 +157,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F03CB77A1C44F58A00B45AFA /* ControlPoint.cpp in Sources */,
 				F0CE8E2A1C4418A200F13877 /* Bezier.cpp in Sources */,
 				F08DAC021C43BB8000E23949 /* README.md in Sources */,
 				599504211C3D3A9C005B2A3E /* Scene.cpp in Sources */,

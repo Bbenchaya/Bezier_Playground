@@ -42,7 +42,7 @@ Vector3f Bezier::getTinXYZ(float t) {
 //}
 
 void Bezier::moveControlPoint(int index, float x, float y){
-    
+    points[index] = Vector3f(x, y, 0);
 }
 
 void Bezier::moveAllPoints(float x, float y){
