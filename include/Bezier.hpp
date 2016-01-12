@@ -21,6 +21,7 @@
 
 #define LEFTMOST 0
 #define RIGHTMOST 1
+#define INNER_CURVE 2
 #define DEPTH_OF_PASCAL_TRIANGLE 11
 #define UP 0
 #define DOWN 1
@@ -44,13 +45,15 @@ public:
     ~Bezier();
     Bezier(const Bezier &other);
     Vector3f getTinXYZ(float t);
-    Bezier* split();
+    Bezier** split();
     void moveControlPoint(int index, float x, float y);
     void moveAllPoints(float x, float y);
     void setExtremum(int position);
+    void clamp(int position, float newX);
     bool isLeftmost();
     bool isRightmost();
     Vector3f getPoint(int index);
+    void setPoint(int index, Vector3f newPosition);
     int getNumOfPoints();
 };
 

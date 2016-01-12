@@ -17,6 +17,10 @@ void ControlPoint::translate(int x, int y){
     curve->moveControlPoint(index, x, y);
 }
 
-void ControlPoint::setIndex(int index){
-    this->index = index;
+void ControlPoint::adjustIndex(int delta){
+    this->index += delta;
+}
+
+Bezier* ControlPoint::getCurve(){
+    return curve;
 }

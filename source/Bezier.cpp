@@ -59,9 +59,11 @@ Vector3f Bezier::getTinXYZ(float t) {
     return Vector3f(x, y, z);
 }
 
-//Bezier* Bezier::split(){
-//    
-//}
+Bezier** Bezier::split(){
+    Bezier *res[2];
+    // TODO implement
+    return res;
+}
 
 void Bezier::moveControlPoint(int index, float x, float y){
     if (isLeftmost() && index == 0)
@@ -72,7 +74,13 @@ void Bezier::moveControlPoint(int index, float x, float y){
 }
 
 void Bezier::moveAllPoints(float x, float y){
-    
+    if (!isLeftmost())
+        points[0] += Vector3f(x, y, 0);
+    if (!isRightmost())
+        points[numOfPoints - 1] += Vector3f(x, y, 0);
+    for (int i = 1; i < numOfPoints - 1; i++) {
+        points[i] += Vector3f(x, y, 0);
+    }
 }
 
 void Bezier::setExtremum(int position){
@@ -84,6 +92,20 @@ void Bezier::setExtremum(int position){
         case RIGHTMOST:
             leftmost = false;
             rightmost = true;
+            break;
+        case INNER_CURVE:
+            leftmost = rightmost = false;
+    }
+}
+
+void Bezier::clamp(int position, float newX){
+    setExtremum(position);
+    switch (position) {
+        case LEFTMOST:
+            points[0] = Vector3f(0, 0, 0);
+            break;
+        case RIGHTMOST:
+            points[numOfPoints - 1] = Vector3f(newX, 0, 0);
     }
 }
 
@@ -97,6 +119,10 @@ bool Bezier::isRightmost(){
 
 Vector3f Bezier::getPoint(int index){
     return points[index];
+}
+
+void Bezier::setPoint(int index, Vector3f newPosition){
+    points[index] = newPosition;
 }
 
 int Bezier::getNumOfPoints(){

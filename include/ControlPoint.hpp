@@ -20,7 +20,8 @@ private:
 public:
     ControlPoint(int index, Bezier *curve);
     void translate(int x, int y);
-    void setIndex(int index);
+    void adjustIndex(int delta);
+    Bezier* getCurve();
     
 };
 

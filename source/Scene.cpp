@@ -21,6 +21,9 @@
 #define RESOLUTION 50
 #define POINT_RADIUS 1
 #define INITIAL_CURVE_LENGTH 15.0
+#define MIN_NUM_OF_CURVES 2
+#define MAX_NUM_OF_CURVES 6
+#define DEFAULT_NUM_OF_CURVES 3
 
 using namespace std;
 
@@ -31,7 +34,6 @@ int old_x;
 int old_y;
 int dotIndex = -1; // what is this?
 int numOfControlPointsPerCurve;
-int numOfCurves;
 bool left_button_pressed;
 bool middle_button_pressed;
 bool right_button_pressed;
@@ -308,8 +310,12 @@ void pickObjects(int x, int y){
     glPopMatrix();
     hits = glRenderMode(GL_RENDER);
     processPicks(hits, buff);
-    listHits(hits, buff);
+    //    listHits(hits, buff);
     display();
+}
+
+void recalibrateControlPointsIndices(){
+    
 }
 
 void mouseClick(int button, int state, int x, int y){
@@ -336,9 +342,49 @@ void mouseClick(int button, int state, int x, int y){
     switch (button) {
         case GLUT_LEFT_BUTTON:
             left_button_pressed = !left_button_pressed;
+            if (left_button_pressed) {
+                pickObjects(x, y);
+            }
+            else {
+                // delete a curve
+                for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
+                    if (*pickedPoint % numOfControlPointsPerCurve == 0 && curves.size() > MIN_NUM_OF_CURVES) {
+                        Bezier *curve = controlPoints[*pickedPoint]->getCurve();
+                        if (curve->isLeftmost()) {
+                            curves[1]->clamp(LEFTMOST, 0);
+                            curves.erase(curves.begin());
+                            controlPoints.erase(controlPoints.begin(), controlPoints.begin() + numOfControlPointsPerCurve);
+                        }
+                        else if (curve->isRightmost()) {
+                            Bezier *last = curves[curves.size() - 1];
+                            float newX = last->getPoint(numOfControlPointsPerCurve - 1).x;
+                            curves.pop_back();
+                            curves[curves.size() - 1]->clamp(RIGHTMOST, newX);
+                            for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+                                controlPoints.pop_back();
+                            }
+                        }
+                        else {
+                            int index = *pickedPoint / numOfControlPointsPerCurve;
+                            Bezier *toRemove = curves[index];
+                            Vector3f pn = toRemove->getPoint(numOfControlPointsPerCurve - 1);
+                            curves[index - 1]->setPoint(numOfControlPointsPerCurve - 1, pn);
+                            curves.erase(curves.begin() + index);
+                            controlPoints.erase(controlPoints.begin() + index * numOfControlPointsPerCurve, controlPoints.begin() + (index + 1) * numOfControlPointsPerCurve);
+                        }
+                    }
+                }
+                display();
+                pickedControlPoints.clear();
+            }
             break;
         case GLUT_MIDDLE_BUTTON:
             middle_button_pressed = !middle_button_pressed;
+            if (middle_button_pressed) {
+                pickObjects(x, y);
+            }
+            else
+                pickedControlPoints.clear();
             break;
         case GLUT_RIGHT_BUTTON:
             right_button_pressed = !right_button_pressed;
@@ -348,47 +394,65 @@ void mouseClick(int button, int state, int x, int y){
             else
                 pickedControlPoints.clear();
     }
-    
+}
+
+void movePoints(int x, int y){
+    for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
+        int deltaX = old_x - x;
+        int deltaY = old_y - y;
+        if (abs(deltaX) > 3){
+            old_x = x;
+        }
+        if (abs(deltaY) > 3){
+            old_y = y;
+        }
+        controlPoints.at(*pickedPoint)->translate(-0.5 * deltaX, 0.5 * deltaY);
+    }
+    display();
 }
 
 void mouseMotion(int x, int y){
     if (left_button_pressed) {
-        if (old_x - x > 0){
-            glRotatef(-ROTATION_DEGREE, 0, 1, 1);
-            display();
-            old_x = x;
+        if (pickedControlPoints.size() > 0) {
+
         }
-        else if (old_x - x < 0){
-            glRotatef(ROTATION_DEGREE, 0, 1, 1);
-            display();
-            old_x = x;
+        else if (inConvexHull()){
+            // TODO implement
         }
-        else if (old_y - y > 0){
-            glRotatef(-ROTATION_DEGREE, 1, 0, 1);
-            display();
-            old_y = y;
-        }
-        else if (old_y - y < 0){
-            glRotatef(ROTATION_DEGREE, 1, 0, 1);
-            display();
-            old_y = y;
+        else {
+            if (old_x - x > 0){
+                glRotatef(-ROTATION_DEGREE, 0, 1, 1);
+                display();
+                old_x = x;
+            }
+            else if (old_x - x < 0){
+                glRotatef(ROTATION_DEGREE, 0, 1, 1);
+                display();
+                old_x = x;
+            }
+            else if (old_y - y > 0){
+                glRotatef(-ROTATION_DEGREE, 1, 0, 1);
+                display();
+                old_y = y;
+            }
+            else if (old_y - y < 0){
+                glRotatef(ROTATION_DEGREE, 1, 0, 1);
+                display();
+                old_y = y;
+            }
         }
     }
-    else if (middle_button_pressed){}
+    else if (middle_button_pressed){
+        if (pickedControlPoints.size() > 0) {
+            movePoints(x, y);
+        }
+        else if (inConvexHull()){
+            // TODO implement
+        }
+    }
     else if (right_button_pressed){
         if (pickedControlPoints.size() > 0) {
-            for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
-                int deltaX = old_x - x;
-                int deltaY = old_y - y;
-                if (abs(deltaX) > 3){
-                    old_x = x;
-                }
-                if (abs(deltaY) > 3){
-                    old_y = y;
-                }
-                controlPoints.at(*pickedPoint)->translate(-0.5 * deltaX, 0.5 * deltaY);
-            }
-            display();
+            movePoints(x, y);
         }
         else if (inConvexHull()){
             // TODO implement
@@ -535,7 +599,6 @@ void init(){
     old_x = WINDOW_WIDTH / 2;
     old_y = WINDOW_HEIGHT / 2;
     numOfControlPointsPerCurve = 4;
-    numOfCurves = 3;
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -602,7 +665,6 @@ void readKey(unsigned char key, int x, int y){
         design_mode = true;
         numOfControlPointsPerCurve = key - 48 + 2; // map key's ASCII value to its symbolic value, add the two outer points
         clearVectors();
-        numOfCurves = 3;
         generateCurves();
         display();
         return;
@@ -642,7 +704,7 @@ int main(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-//    glutInitWindowPosition(150, 50);
+    //    glutInitWindowPosition(150, 50);
     glutCreateWindow("Bezier's playground");
     init();
     glutKeyboardFunc(readKey);
