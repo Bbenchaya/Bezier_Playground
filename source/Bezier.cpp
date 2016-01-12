@@ -25,6 +25,28 @@ Bezier::Bezier(int numOfPoints, Vector3f *points){
     }
 }
 
+Bezier::~Bezier(){
+    printf("I was deleted! %p\n", this);
+}
+
+Bezier::Bezier(const Bezier &other){
+    this->numOfPoints = other.numOfPoints;
+    this->points = new Vector3f[numOfPoints];
+    for (int i = 0; i < numOfPoints; i++) {
+        this->points[i] = other.points[i];
+    }
+    leftmost = other.leftmost;
+    rightmost = other.rightmost;
+    for (int i = 0; i < DEPTH_OF_PASCAL_TRIANGLE; i++) {
+        binom[i] = new float[i + 1];
+        binom[i][0] = 1;
+        for (int j = 1; j < i; j++) {
+            binom[i][j] = binom[i - 1][j - 1] + binom[i - 1][j];
+        }
+        binom[i][i] = 1;
+    }
+}
+
 Vector3f Bezier::getTinXYZ(float t) {
     float x = 0;
     float y = 0;
@@ -46,7 +68,7 @@ void Bezier::moveControlPoint(int index, float x, float y){
         return;
     if (isRightmost() && index == numOfPoints - 1)
         return;
-    points[index] = Vector3f(x, y, 0);
+    points[index] += Vector3f(x, y, 0);
 }
 
 void Bezier::moveAllPoints(float x, float y){

@@ -24,19 +24,19 @@
 
 using namespace std;
 
-vector<Bezier> curves;
-vector<ControlPoint> controlPoints;
+vector<Bezier*> curves;
+vector<ControlPoint*> controlPoints;
 vector<int> pickedControlPoints;
 int old_x;
 int old_y;
-int dotIndex = -1;
+int dotIndex = -1; // what is this?
 int numOfControlPointsPerCurve;
 int numOfCurves;
 bool left_button_pressed;
 bool middle_button_pressed;
 bool right_button_pressed;
 bool design_mode;
-float camAngle;
+GLfloat camAngle;
 GLint hits;
 
 void printModelviewMatrix(){
@@ -188,9 +188,9 @@ void drawAxes(){
 
 void drawCurves(){
     glBegin(GL_LINE_STRIP);
-    for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
+    for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
         for (float i = 0; i <= RESOLUTION; i++) {
-            Vector3f point = curve->getTinXYZ(i / RESOLUTION);
+            Vector3f point = (*curve)->getTinXYZ(i / RESOLUTION);
             glVertex3f(point.x, point.y, point.z);
         }
     }
@@ -199,32 +199,32 @@ void drawCurves(){
 
 void drawControlPoints(int mode){
     /*
-     * Each curve draws its point in ascending order, except for the last point. This is so the last point of a curve, which
+     * Each curve draws its points in ascending order, except for the last point. This is so the last point of a curve, which
      * overlaps the first point of the next curve, wouldn't be rendered atop of each other.
      * Only the last curve draws its last point, which always rests on the X axis.
      * The first and last control points of a curve are blue, and the remaining inner control points are gray.
      */
-    float blue[4] = {0, 0, 1, 1};
-    float gray[4] = {0.5, 0.5, 0.5, 1};
+    GLfloat blue[4] = {0, 0, 1, 1};
+    GLfloat gray[4] = {0.5, 0.5, 0.5, 1};
     switch (mode) {
         case GL_RENDER:
-            for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
-                Vector3f point = curve->getPoint(0);
+            for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
+                Vector3f point = (*curve)->getPoint(0);
                 glPushMatrix();
                 glTranslatef(point.x, point.y, point.z);
                 glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
                 glutSolidSphere(POINT_RADIUS, 20, 20);
                 glPopMatrix();
-                for (int i = 1; i < curve->getNumOfPoints() - 1; i++) {
-                    point = curve->getPoint(i);
+                for (int i = 1; i < (*curve)->getNumOfPoints() - 1; i++) {
+                    point = (*curve)->getPoint(i);
                     glPushMatrix();
                     glTranslatef(point.x, point.y, point.z);
                     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, gray);
                     glutSolidSphere(POINT_RADIUS, 20, 20);
                     glPopMatrix();
                 }
-                if (curve->isRightmost()) {
-                    Vector3f point = curve->getPoint(curve->getNumOfPoints() - 1);
+                if ((*curve)->isRightmost()) {
+                    Vector3f point = (*curve)->getPoint((*curve)->getNumOfPoints() - 1);
                     glPushMatrix();
                     glTranslatef(point.x, point.y, point.z);
                     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
@@ -235,12 +235,11 @@ void drawControlPoints(int mode){
             break;
         case GL_SELECT:
             int curveNum = 0;
-            for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++, curveNum++) {
-                Vector3f point = curve->getPoint(0);
-                for (int i = 0; i < curve->getNumOfPoints(); i++) {
-                    cout << i + curveNum*numOfControlPointsPerCurve << endl;
-                    point = curve->getPoint(i);
-                    glLoadName(i + curveNum*numOfControlPointsPerCurve);
+            for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++, curveNum++) {
+                Vector3f point = (*curve)->getPoint(0);
+                for (int i = 0; i < (*curve)->getNumOfPoints(); i++) {
+                    point = (*curve)->getPoint(i);
+                    glLoadName(i + curveNum * numOfControlPointsPerCurve);
                     glPushMatrix();
                     glTranslatef(point.x, point.y, point.z);
                     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, gray);
@@ -297,10 +296,13 @@ void pickObjects(int x, int y){
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    gluPickMatrix(x, y, 1.0, 1.0, view);
-    gluPerspective(camAngle, 1.0, Z_NEAR, Z_FAR);
+    /*
+     * The window's top-left corner is (0,0), but in the picking matrix (0,0) is the bottom-left,
+     * so we have to invert the Y values.
+     */
+    gluPickMatrix(x, WINDOW_HEIGHT - y, 1.0, 1.0, view);
+    gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
     glMatrixMode(GL_MODELVIEW);
-//    cout << controlPoints.size() << endl;
     drawControlPoints(GL_SELECT);
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -376,24 +378,15 @@ void mouseMotion(int x, int y){
     else if (right_button_pressed){
         if (pickedControlPoints.size() > 0) {
             for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
-                int deltaX, deltaY;
-                if (old_y - y > 3){
-                    deltaY = 1;
-                    old_y = y;
-                }
-                else if (old_y - y < -3){
-                    deltaY = -1;
-                    old_y = y;
-                }
-                if (old_x - x > 3){
-                    deltaX = 1;
+                int deltaX = old_x - x;
+                int deltaY = old_y - y;
+                if (abs(deltaX) > 3){
                     old_x = x;
                 }
-                else if (old_x - x < -3){
-                    deltaX = -1;
-                    old_x = x;
+                if (abs(deltaY) > 3){
+                    old_y = y;
                 }
-                controlPoints.at(*pickedPoint).translate(deltaX, deltaY);
+                controlPoints.at(*pickedPoint)->translate(-0.5 * deltaX, 0.5 * deltaY);
             }
             display();
         }
@@ -493,28 +486,28 @@ void generateCurves(){
         v2[i] = Vector3f(INITIAL_CURVE_LENGTH + iFloat * step, num * step, 0);
         v3[i] = Vector3f(2 * INITIAL_CURVE_LENGTH + iFloat * step, (num - iFloat) * step, 0);
     }
-    Bezier b1(numOfControlPointsPerCurve, v1);
-    Bezier b2(numOfControlPointsPerCurve, v2);
-    Bezier b3(numOfControlPointsPerCurve, v3);
+    Bezier *b1 = new Bezier(numOfControlPointsPerCurve, v1);
+    Bezier *b2 = new Bezier(numOfControlPointsPerCurve, v2);
+    Bezier *b3 = new Bezier(numOfControlPointsPerCurve, v3);
     /*
      * After the curves are created, construct the vector of control points. Each control point holds a reference to its respective
      * curve and the index of the control point in that curve, which relates to this specific control point.
      * This enables easy picking of control points when trying to move them around the screen with the mouse.
      */
     for (int i = 0; i < numOfControlPointsPerCurve; i++) {
-        ControlPoint point(i, &b1);
+        ControlPoint *point = new ControlPoint(i, b1);
         controlPoints.push_back(point);
     }
     for (int i = 0; i < numOfControlPointsPerCurve; i++) {
-        ControlPoint point(i, &b2);
+        ControlPoint *point = new ControlPoint(i, b2);
         controlPoints.push_back(point);
     }
     for (int i = 0; i < numOfControlPointsPerCurve; i++) {
-        ControlPoint point(i, &b3);
+        ControlPoint *point = new ControlPoint(i, b3);
         controlPoints.push_back(point);
     }
-    b1.setExtremum(LEFTMOST);
-    b3.setExtremum(RIGHTMOST);
+    b1->setExtremum(LEFTMOST);
+    b3->setExtremum(RIGHTMOST);
     curves.push_back(b1);
     curves.push_back(b2);
     curves.push_back(b3);
@@ -589,9 +582,9 @@ void init(){
 
 void recalibrateControlPoints(){
     controlPoints.clear();
-    for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
+    for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
         for (int i = 0; i < numOfControlPointsPerCurve; i++) {
-            ControlPoint point(i, &(*curve));
+            ControlPoint *point = new ControlPoint(i, *curve);
             controlPoints.push_back(point);
         }
     }

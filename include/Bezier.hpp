@@ -34,10 +34,15 @@ private:
     int numOfPoints;
     bool leftmost;
     bool rightmost;
+    /*
+     * Since binomial coefficients are used, it is very effective to store them in advance using Pascal's triangle.
+     */
     float *binom[DEPTH_OF_PASCAL_TRIANGLE];
     
 public:
     Bezier(int numOfPoints, Vector3f *points);
+    ~Bezier();
+    Bezier(const Bezier &other);
     Vector3f getTinXYZ(float t);
     Bezier* split();
     void moveControlPoint(int index, float x, float y);
