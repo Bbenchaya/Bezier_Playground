@@ -42,6 +42,10 @@ Vector3f Bezier::getTinXYZ(float t) {
 //}
 
 void Bezier::moveControlPoint(int index, float x, float y){
+    if (isLeftmost() && index == 0)
+        return;
+    if (isRightmost() && index == numOfPoints - 1)
+        return;
     points[index] = Vector3f(x, y, 0);
 }
 

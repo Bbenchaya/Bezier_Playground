@@ -15,8 +15,8 @@
 #define Z_FAR 2.0
 #define bufSize 128
 #define maxSize 512 //what is maxsize?
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 800
+#define WINDOW_WIDTH 512
+#define WINDOW_HEIGHT 512
 #define ROTATION_DEGREE 1
 #define RESOLUTION 50
 #define POINT_RADIUS 1
@@ -26,6 +26,7 @@ using namespace std;
 
 vector<Bezier> curves;
 vector<ControlPoint> controlPoints;
+vector<int> pickedControlPoints;
 int old_x;
 int old_y;
 int dotIndex = -1;
@@ -205,32 +206,54 @@ void drawControlPoints(int mode){
      */
     float blue[4] = {0, 0, 1, 1};
     float gray[4] = {0.5, 0.5, 0.5, 1};
-    for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
-        Vector3f point = curve->getPoint(0);
-        glPushMatrix();
-        glTranslatef(point.x, point.y, point.z);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
-        glutSolidSphere(POINT_RADIUS, 20, 20);
-        glPopMatrix();
-        for (int i = 1; i < curve->getNumOfPoints() - 1; i++) {
-            point = curve->getPoint(i);
-            glPushMatrix();
-            glTranslatef(point.x, point.y, point.z);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, gray);
-            glutSolidSphere(POINT_RADIUS, 20, 20);
-            glPopMatrix();
-        }
-        if (curve->isRightmost()) {
-            Vector3f point = curve->getPoint(curve->getNumOfPoints() - 1);
-            glPushMatrix();
-            glTranslatef(point.x, point.y, point.z);
-            glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
-            glutSolidSphere(POINT_RADIUS, 20, 20);
-            glPopMatrix();
-        }
+    switch (mode) {
+        case GL_RENDER:
+            for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
+                Vector3f point = curve->getPoint(0);
+                glPushMatrix();
+                glTranslatef(point.x, point.y, point.z);
+                glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
+                glutSolidSphere(POINT_RADIUS, 20, 20);
+                glPopMatrix();
+                for (int i = 1; i < curve->getNumOfPoints() - 1; i++) {
+                    point = curve->getPoint(i);
+                    glPushMatrix();
+                    glTranslatef(point.x, point.y, point.z);
+                    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, gray);
+                    glutSolidSphere(POINT_RADIUS, 20, 20);
+                    glPopMatrix();
+                }
+                if (curve->isRightmost()) {
+                    Vector3f point = curve->getPoint(curve->getNumOfPoints() - 1);
+                    glPushMatrix();
+                    glTranslatef(point.x, point.y, point.z);
+                    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, blue);
+                    glutSolidSphere(POINT_RADIUS, 20, 20);
+                    glPopMatrix();
+                }
+            }
+            break;
+        case GL_SELECT:
+            int curveNum = 0;
+            for (vector<Bezier>::iterator curve = curves.begin(); curve != curves.end(); curve++, curveNum++) {
+                Vector3f point = curve->getPoint(0);
+                for (int i = 0; i < curve->getNumOfPoints(); i++) {
+                    cout << i + curveNum*numOfControlPointsPerCurve << endl;
+                    point = curve->getPoint(i);
+                    glLoadName(i + curveNum*numOfControlPointsPerCurve);
+                    glPushMatrix();
+                    glTranslatef(point.x, point.y, point.z);
+                    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, gray);
+                    glutSolidSphere(POINT_RADIUS, 20, 20);
+                    glPopMatrix();
+                }
+            }
     }
 }
 
+bool inConvexHull(){
+    return false;
+}
 
 void display(void){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -241,7 +264,7 @@ void display(void){
     glFlush();
 }
 
-void list_hits(GLint hits, GLuint *names) {
+void listHits(GLint hits, GLuint *names) {
     int i;
     printf("%d hits:\n", hits);
     for (i = 0; i < hits; i++)
@@ -257,42 +280,35 @@ void list_hits(GLint hits, GLuint *names) {
     printf("\n");
 }
 
-//void processPicks(GLint hits, GLuint *names) {
-//    int name_of_min = INT32_MAX;
-//    int min = INT32_MAX;
-//    for (int i = 0; i < hits; i++){
-//        if ((GLubyte)names[i * 4 + 1] < min) {
-//            min = (GLubyte)names[i * 4 + 1];
-//            name_of_min = (GLubyte)names[i * 4 + 3];
-//        }
-//    }
-//    if (min < INT32_MAX) {
-//        shapes.at(name_of_min).pick();
-//        last_picked_object = name_of_min;
-//    }
-//}
-//
-//void pick_objects(int x, int y){
-//    GLuint buff[shapes.size()];
-//    GLint hits, view[4];
-//    glSelectBuffer(64, buff);
-//    glGetIntegerv(GL_VIEWPORT, view);
-//    glRenderMode(GL_SELECT);
-//    glInitNames();
-//    glPushName(0);
-//    glMatrixMode(GL_PROJECTION);
-//    glPushMatrix();
-//    glLoadIdentity();
-//    gluPickMatrix(x, y, 1.0, 1.0, view);
-//    gluPerspective(FOV, 1.0, Z_NEAR, Z_FAR);
-//    glMatrixMode(GL_MODELVIEW);
-//    drawObjects(GL_SELECT);
-//    glMatrixMode(GL_PROJECTION);
-//    glPopMatrix();
-//    hits = glRenderMode(GL_RENDER);
-//    processPicks(hits, buff);
-//    display();
-//}
+void processPicks(GLint hits, GLuint *names) {
+    for (int i = 0; i < hits; i++) {
+        pickedControlPoints.push_back((GLubyte)names[i * 4 + 3]);
+    }
+}
+
+void pickObjects(int x, int y){
+    GLuint *buff = new GLuint[controlPoints.size()];;
+    GLint hits, view[4];
+    glSelectBuffer(64, buff);
+    glGetIntegerv(GL_VIEWPORT, view);
+    glRenderMode(GL_SELECT);
+    glInitNames();
+    glPushName(0);
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluPickMatrix(x, y, 1.0, 1.0, view);
+    gluPerspective(camAngle, 1.0, Z_NEAR, Z_FAR);
+    glMatrixMode(GL_MODELVIEW);
+//    cout << controlPoints.size() << endl;
+    drawControlPoints(GL_SELECT);
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    hits = glRenderMode(GL_RENDER);
+    processPicks(hits, buff);
+    listHits(hits, buff);
+    display();
+}
 
 void mouseClick(int button, int state, int x, int y){
     //    GLint viewport[4];
@@ -324,6 +340,11 @@ void mouseClick(int button, int state, int x, int y){
             break;
         case GLUT_RIGHT_BUTTON:
             right_button_pressed = !right_button_pressed;
+            if (right_button_pressed) {
+                pickObjects(x, y);
+            }
+            else
+                pickedControlPoints.clear();
     }
     
 }
@@ -353,24 +374,53 @@ void mouseMotion(int x, int y){
     }
     else if (middle_button_pressed){}
     else if (right_button_pressed){
-        if (old_y - y > 3){
-            camAngle = fmax(15, camAngle - 0.5);
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
-            glMatrixMode(GL_MODELVIEW);
+        if (pickedControlPoints.size() > 0) {
+            for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
+                int deltaX, deltaY;
+                if (old_y - y > 3){
+                    deltaY = 1;
+                    old_y = y;
+                }
+                else if (old_y - y < -3){
+                    deltaY = -1;
+                    old_y = y;
+                }
+                if (old_x - x > 3){
+                    deltaX = 1;
+                    old_x = x;
+                }
+                else if (old_x - x < -3){
+                    deltaX = -1;
+                    old_x = x;
+                }
+                controlPoints.at(*pickedPoint).translate(deltaX, deltaY);
+            }
             display();
-            old_y = y;
         }
-        else if (old_y - y < -3){
-            camAngle = fmin(140, camAngle + 0.5);
-            glMatrixMode(GL_PROJECTION);
-            glLoadIdentity();
-            gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
-            glMatrixMode(GL_MODELVIEW);
-            display();
-            old_y = y;
+        else if (inConvexHull()){
+            // TODO implement
         }
+        else{
+            if (old_y - y > 3){
+                camAngle = fmax(15, camAngle - 0.5);
+                glMatrixMode(GL_PROJECTION);
+                glLoadIdentity();
+                gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
+                glMatrixMode(GL_MODELVIEW);
+                display();
+                old_y = y;
+            }
+            else if (old_y - y < -3){
+                camAngle = fmin(140, camAngle + 0.5);
+                glMatrixMode(GL_PROJECTION);
+                glLoadIdentity();
+                gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
+                glMatrixMode(GL_MODELVIEW);
+                display();
+                old_y = y;
+            }
+        }
+        
     }
 }
 
@@ -500,35 +550,35 @@ void init(){
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(0, 0, -100);
-//    glLineWidth(4);
-//    glClearColor(0, 0, 0, 1);
-//    last_Point_X = 0;
-//    firstPoint = Vector3f(0,0,0);
-//    lastPoint = Vector3f(last_Point_X, 0, 0);
-//    glEnable(GL_MAP2_VERTEX_3);
+    //    glLineWidth(4);
+    //    glClearColor(0, 0, 0, 1);
+    //    last_Point_X = 0;
+    //    firstPoint = Vector3f(0,0,0);
+    //    lastPoint = Vector3f(last_Point_X, 0, 0);
+    //    glEnable(GL_MAP2_VERTEX_3);
     //glEnable(GL_MAP1_VERTEX_3);
-//    glEnable(GL_AUTO_NORMAL);
-//    glEnable(GL_NORMALIZE);
+    //    glEnable(GL_AUTO_NORMAL);
+    //    glEnable(GL_NORMALIZE);
     glEnable(GL_DEPTH_TEST);
-//    glEnable(GL_LIGHTING);
-//    glEnable(GL_LIGHT0);
+    //    glEnable(GL_LIGHTING);
+    //    glEnable(GL_LIGHT0);
     //GLfloat light_direction[]={0,-1,0};
-//    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
-//    GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
-//    GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
-//    GLfloat light_position[] = { 0,0.0,1,0 };
+    //    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
+    //    GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
+    //    GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
+    //    GLfloat light_position[] = { 0,0.0,1,0 };
     //GLfloat angle[] = {20.0};
-//    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-//    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-//    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-//    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-//    GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
-//    GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
-//    GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
-//    GLfloat low_sh[] = { 5.0 };
-//    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
-//    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
-//    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
+    //    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    //    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    //    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    //    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    //    GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
+    //    GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
+    //    GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
+    //    GLfloat low_sh[] = { 5.0 };
+    //    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
+    //    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
+    //    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
     initLights();
     generateCurves();
 }
@@ -550,6 +600,7 @@ void recalibrateControlPoints(){
 void clearVectors(){
     controlPoints.clear();
     curves.clear();
+    pickedControlPoints.clear();
 }
 
 void readKey(unsigned char key, int x, int y){
@@ -575,8 +626,8 @@ void readKey(unsigned char key, int x, int y){
         cout << "RESETTING SCENE" << endl;
         clearVectors();
         init();
-//        glLoadIdentity();
-//        glTranslatef(0.0f, 0, -100.0f);
+        //        glLoadIdentity();
+        //        glTranslatef(0.0f, 0, -100.0f);
         display();
     }
     if (key == ESC) {
@@ -597,8 +648,8 @@ void readKey(unsigned char key, int x, int y){
 int main(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
-    glutInitWindowSize(800, 800);
-    glutInitWindowPosition(150, 50);
+    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+//    glutInitWindowPosition(150, 50);
     glutCreateWindow("Bezier's playground");
     init();
     glutKeyboardFunc(readKey);
