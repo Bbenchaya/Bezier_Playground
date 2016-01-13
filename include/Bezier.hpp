@@ -14,6 +14,7 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <utility>
 
 #include "Vector3f.h"
 
@@ -27,6 +28,8 @@
 #define DOWN 1
 #define LEFT 2
 #define RIGHT 3
+
+using namespace std;
 
 class Bezier {
     
@@ -55,6 +58,8 @@ public:
     Vector3f getPoint(int index);
     void setPoint(int index, Vector3f newPosition);
     int getNumOfPoints();
+    pair<float, float> getP0PnLinearFunction();
+    void adjustPnMinus1(pair<float, float> linearFunc);
 };
 
 

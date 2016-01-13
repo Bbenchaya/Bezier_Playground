@@ -60,16 +60,20 @@ Vector3f Bezier::getTinXYZ(float t) {
 }
 
 Bezier** Bezier::split(){
-    Bezier *res[2];
+    Bezier **res = new Bezier*[2];
     // TODO implement
     return res;
 }
 
 void Bezier::moveControlPoint(int index, float x, float y){
-    if (isLeftmost() && index == 0)
+    if (isLeftmost() && index == 0) {
+        points[index] += Vector3f(x, 0, 0);
         return;
-    if (isRightmost() && index == numOfPoints - 1)
+    }
+    if (isRightmost() && index == numOfPoints - 1) {
+        points[index] += Vector3f(x, 0, 0);
         return;
+    }
     points[index] += Vector3f(x, y, 0);
 }
 
@@ -127,4 +131,18 @@ void Bezier::setPoint(int index, Vector3f newPosition){
 
 int Bezier::getNumOfPoints(){
     return numOfPoints;
+}
+
+pair<float, float> Bezier::getP0PnLinearFunction(){
+    float deltaY = points[1].y - points[0].y;
+    float deltaX = points[1].y - points[0].y;
+    float m = deltaY / deltaX;
+    float n = points[0].y - m * points[0].x;
+    return make_pair(m, n);
+}
+
+void Bezier::adjustPnMinus1(pair<float, float> linearFunc){
+    Vector3f PnMinus1 = points[numOfPoints - 2];
+    float newY = linearFunc.first * PnMinus1.x + linearFunc.second;
+    points[numOfPoints - 2] = Vector3f(PnMinus1.x, newY, 0);
 }

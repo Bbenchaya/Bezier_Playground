@@ -10,3 +10,17 @@ Implementation:
 2. At any time, hitting 'r' or 'R' on the keyboard resets the scene.
 3. At any time, hitting one of the numbered keys on the keyboard will reset the scene, but each curve will have inner control points as the number that has been pressed, i.e. if the user hits '5', then the curve will have 7 points - 2 external (start and end), 5 internal.
 4. Curve removal: if there are more than 2 curves, you can delete a curve by left-clicking its leftmost control point. The deletion takes place after the user releases the left mouse button. If an inner curve is removed, point p_n of the curve to the left gets clamped to point p_0 of the curve to the right.
+
+
+
+
+
+
+TODOS
+0. curve continuity
+1. split curve
+1.5. if p_0 and p_1 are in the same position, don't calculate the linear function - division by zero motha fucka
+2. convex hull calculation
+3. control points shpuld stick to the mouse pointer
+4. rotate scene
+5. 'd' mode

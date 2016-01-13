@@ -13,7 +13,7 @@
 
 #define Z_NEAR 200.0
 #define Z_FAR 2.0
-#define bufSize 128
+#define bufSize 128 // WTF mate
 #define maxSize 512 //what is maxsize?
 #define WINDOW_WIDTH 512
 #define WINDOW_HEIGHT 512
@@ -78,28 +78,6 @@ void drawAxes(){
     glEnd();
 }
 
-
-//void changePointPosition(vector <Vector3f> &control, Vector3f diff){
-//
-//}
-
-//void drawShape(){
-//    float red[4] = {1, 0, 0, 1};
-//    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, red);
-//    glutSolidSphere(POINT_SIZE, 50, 50);
-//}
-
-//void drawCurve(vector <Vector3f> &curve, GLenum mode, int degree, int subNum){
-//    for (int j = 1; j <= control_points_num; j++) {
-//        drawShape();
-//        curve.push_back(Vector3f(j,j-1,0));
-//    }
-//    glBegin(GL_LINE_STRIP);
-//    for (int i = 0; i < curve.size(); i++)
-//        glVertex3f(curve.at(i).x, curve.at(i).y, curve.at(i).z);
-//    glEnd();
-//}
-
 /////////////////////////////
 //surface: 2D NURBS
 //degree is the degree of each polynom in u
@@ -151,41 +129,10 @@ void drawAxes(){
 //    }
 //}
 
-//void splitCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum){
-//
-//}
-
-//void deleteCurve(vector <Vector3f> &curve, int curveIndx, int degree, int &subNum){}
-
 //void makeStraight(vector <Vector3f> &curve, int curveIndx, int degree){
 //}
 
 //void derevativeContinuity(vector <Vector3f> &curve, int vertexIndx, int degree){
-//}
-
-//void startPicking(GLuint *selectionBuf){
-//    GLint hits;
-//    glSelectBuffer(maxSize * 12, selectionBuf); //declare buffer for input in selection mode
-//    glRenderMode(GL_SELECT); //change to selecting mode
-//    glInitNames();			//initialize names stack
-//    glPushName(-1);			//push name
-//    //======================
-//    glMatrixMode(GL_PROJECTION);
-//    glPushMatrix();
-//    glLoadIdentity();
-//    //    gluPickMatrix(x, y, 1.0, 1.0, view);
-//    //    gluPerspective(FOV, 1.0, Z_NEAR, Z_FAR);
-//    glMatrixMode(GL_MODELVIEW);
-//    //    drawObjects(GL_SELECT);
-//    glMatrixMode(GL_PROJECTION);
-//    glPopMatrix();
-//    hits = glRenderMode(GL_RENDER);
-//    //    processPicks(hits, selectionBuf);
-//    //    display();
-//
-//}
-
-//void processHits(GLint hits, GLuint *buffer){
 //}
 
 void drawCurves(){
@@ -373,6 +320,31 @@ void mouseClick(int button, int state, int x, int y){
                             controlPoints.erase(controlPoints.begin() + index * numOfControlPointsPerCurve, controlPoints.begin() + (index + 1) * numOfControlPointsPerCurve);
                         }
                     }
+                    if (*pickedPoint % numOfControlPointsPerCurve == 1 && curves.size() < MAX_NUM_OF_CURVES) {
+                        Bezier *curve = controlPoints[*pickedPoint]->getCurve();
+                        if (curve->isLeftmost()) {
+                            curves[1]->clamp(LEFTMOST, 0);
+                            curves.erase(curves.begin());
+                            controlPoints.erase(controlPoints.begin(), controlPoints.begin() + numOfControlPointsPerCurve);
+                        }
+                        else if (curve->isRightmost()) {
+                            Bezier *last = curves[curves.size() - 1];
+                            float newX = last->getPoint(numOfControlPointsPerCurve - 1).x;
+                            curves.pop_back();
+                            curves[curves.size() - 1]->clamp(RIGHTMOST, newX);
+                            for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+                                controlPoints.pop_back();
+                            }
+                        }
+                        else {
+                            int index = *pickedPoint / numOfControlPointsPerCurve;
+                            Bezier *toRemove = curves[index];
+                            Vector3f pn = toRemove->getPoint(numOfControlPointsPerCurve - 1);
+                            curves[index - 1]->setPoint(numOfControlPointsPerCurve - 1, pn);
+                            curves.erase(curves.begin() + index);
+                            controlPoints.erase(controlPoints.begin() + index * numOfControlPointsPerCurve, controlPoints.begin() + (index + 1) * numOfControlPointsPerCurve);
+                        }
+                    }
                 }
                 display();
                 pickedControlPoints.clear();
@@ -397,17 +369,21 @@ void mouseClick(int button, int state, int x, int y){
 }
 
 void movePoints(int x, int y){
+    int newX = old_x;
+    int newY = old_y;
     for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
         int deltaX = old_x - x;
         int deltaY = old_y - y;
         if (abs(deltaX) > 3){
-            old_x = x;
+            newX = x;
         }
         if (abs(deltaY) > 3){
-            old_y = y;
+            newY = y;
         }
         controlPoints.at(*pickedPoint)->translate(-0.5 * deltaX, 0.5 * deltaY);
     }
+    old_x = newX;
+    old_y = newY;
     display();
 }
 
