@@ -38,6 +38,8 @@ private:
     int numOfPoints;
     bool leftmost;
     bool rightmost;
+    Bezier *next;
+    Bezier *previous;
     /*
      * Since binomial coefficients are used, it is very effective to store them in advance using Pascal's triangle.
      */
@@ -58,8 +60,12 @@ public:
     Vector3f getPoint(int index);
     void setPoint(int index, Vector3f newPosition);
     int getNumOfPoints();
-    pair<float, float> getP0PnLinearFunction();
+    pair<float, float> getP0P1LinearFunction();
     void adjustPnMinus1(pair<float, float> linearFunc);
+    void setNextCurve(Bezier *next);
+    Bezier* getNextCurve();
+    void setPreviousCurve(Bezier *previous);
+    Bezier* getPreviousCurve();
 };
 
 

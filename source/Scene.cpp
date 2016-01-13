@@ -15,8 +15,6 @@
 #define Z_FAR 2.0
 #define bufSize 128 // WTF mate
 #define maxSize 512 //what is maxsize?
-#define WINDOW_WIDTH 512
-#define WINDOW_HEIGHT 512
 #define ROTATION_DEGREE 1
 #define RESOLUTION 50
 #define POINT_RADIUS 1
@@ -38,6 +36,8 @@ bool left_button_pressed;
 bool middle_button_pressed;
 bool right_button_pressed;
 bool design_mode;
+GLfloat window_width = 512;
+GLfloat window_height = 512;
 GLfloat camAngle;
 GLint hits;
 
@@ -249,8 +249,8 @@ void pickObjects(int x, int y){
      * The window's top-left corner is (0,0), but in the picking matrix (0,0) is the bottom-left,
      * so we have to invert the Y values.
      */
-    gluPickMatrix(x, WINDOW_HEIGHT - y, 1.0, 1.0, view);
-    gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
+    gluPickMatrix(x, window_height - y, 1.0, 1.0, view);
+    gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
     glMatrixMode(GL_MODELVIEW);
     drawControlPoints(GL_SELECT);
     glMatrixMode(GL_PROJECTION);
@@ -295,10 +295,14 @@ void mouseClick(int button, int state, int x, int y){
             else {
                 // delete a curve
                 for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
+                    /*
+                     * The picked point has index 0 in the curve
+                     */
                     if (*pickedPoint % numOfControlPointsPerCurve == 0 && curves.size() > MIN_NUM_OF_CURVES) {
                         Bezier *curve = controlPoints[*pickedPoint]->getCurve();
                         if (curve->isLeftmost()) {
                             curves[1]->clamp(LEFTMOST, 0);
+                            curves[1]->setPreviousCurve(NULL);
                             curves.erase(curves.begin());
                             controlPoints.erase(controlPoints.begin(), controlPoints.begin() + numOfControlPointsPerCurve);
                         }
@@ -307,6 +311,7 @@ void mouseClick(int button, int state, int x, int y){
                             float newX = last->getPoint(numOfControlPointsPerCurve - 1).x;
                             curves.pop_back();
                             curves[curves.size() - 1]->clamp(RIGHTMOST, newX);
+                            curves[curves.size() - 1]->setNextCurve(NULL);
                             for (int i = 0; i < numOfControlPointsPerCurve; i++) {
                                 controlPoints.pop_back();
                             }
@@ -320,30 +325,20 @@ void mouseClick(int button, int state, int x, int y){
                             controlPoints.erase(controlPoints.begin() + index * numOfControlPointsPerCurve, controlPoints.begin() + (index + 1) * numOfControlPointsPerCurve);
                         }
                     }
+                    /*
+                     * The picked point has index 1 in the curve
+                     */
                     if (*pickedPoint % numOfControlPointsPerCurve == 1 && curves.size() < MAX_NUM_OF_CURVES) {
                         Bezier *curve = controlPoints[*pickedPoint]->getCurve();
                         if (curve->isLeftmost()) {
-                            curves[1]->clamp(LEFTMOST, 0);
-                            curves.erase(curves.begin());
-                            controlPoints.erase(controlPoints.begin(), controlPoints.begin() + numOfControlPointsPerCurve);
+                            continue;
                         }
-                        else if (curve->isRightmost()) {
-                            Bezier *last = curves[curves.size() - 1];
-                            float newX = last->getPoint(numOfControlPointsPerCurve - 1).x;
-                            curves.pop_back();
-                            curves[curves.size() - 1]->clamp(RIGHTMOST, newX);
-                            for (int i = 0; i < numOfControlPointsPerCurve; i++) {
-                                controlPoints.pop_back();
-                            }
+                        Bezier *previous = curve->getPreviousCurve();
+                        pair<float, float> linearFunc = curve->getP0P1LinearFunction();
+                        if (linearFunc.first == 0 && linearFunc.second == 0) {
+                            continue;
                         }
-                        else {
-                            int index = *pickedPoint / numOfControlPointsPerCurve;
-                            Bezier *toRemove = curves[index];
-                            Vector3f pn = toRemove->getPoint(numOfControlPointsPerCurve - 1);
-                            curves[index - 1]->setPoint(numOfControlPointsPerCurve - 1, pn);
-                            curves.erase(curves.begin() + index);
-                            controlPoints.erase(controlPoints.begin() + index * numOfControlPointsPerCurve, controlPoints.begin() + (index + 1) * numOfControlPointsPerCurve);
-                        }
+                        previous->adjustPnMinus1(linearFunc);
                     }
                 }
                 display();
@@ -380,7 +375,7 @@ void movePoints(int x, int y){
         if (abs(deltaY) > 3){
             newY = y;
         }
-        controlPoints.at(*pickedPoint)->translate(-0.5 * deltaX, 0.5 * deltaY);
+        controlPoints[*pickedPoint]->translate(-0.5 * deltaX, 0.5 * deltaY);
     }
     old_x = newX;
     old_y = newY;
@@ -438,7 +433,7 @@ void mouseMotion(int x, int y){
                 camAngle = fmax(15, camAngle - 0.5);
                 glMatrixMode(GL_PROJECTION);
                 glLoadIdentity();
-                gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
+                gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
                 glMatrixMode(GL_MODELVIEW);
                 display();
                 old_y = y;
@@ -447,7 +442,7 @@ void mouseMotion(int x, int y){
                 camAngle = fmin(140, camAngle + 0.5);
                 glMatrixMode(GL_PROJECTION);
                 glLoadIdentity();
-                gluPerspective(camAngle, WINDOW_WIDTH / WINDOW_HEIGHT, Z_NEAR, Z_FAR);
+                gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
                 glMatrixMode(GL_MODELVIEW);
                 display();
                 old_y = y;
@@ -548,6 +543,10 @@ void generateCurves(){
     }
     b1->setExtremum(LEFTMOST);
     b3->setExtremum(RIGHTMOST);
+    b1->setNextCurve(b2);
+    b2->setPreviousCurve(b1);
+    b2->setNextCurve(b3);
+    b3->setPreviousCurve(b2);
     curves.push_back(b1);
     curves.push_back(b2);
     curves.push_back(b3);
@@ -572,10 +571,10 @@ void init(){
     middle_button_pressed = false;
     right_button_pressed = false;
     design_mode = true;
-    old_x = WINDOW_WIDTH / 2;
-    old_y = WINDOW_HEIGHT / 2;
+    old_x = window_width / 2;
+    old_y = window_height / 2;
     numOfControlPointsPerCurve = 4;
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    glViewport(0, 0, window_width, window_height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(camAngle, 1, Z_NEAR, Z_FAR);
@@ -679,7 +678,7 @@ void readKey(unsigned char key, int x, int y){
 int main(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
-    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    glutInitWindowSize(window_width, window_height);
     //    glutInitWindowPosition(150, 50);
     glutCreateWindow("Bezier's playground");
     init();

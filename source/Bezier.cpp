@@ -23,6 +23,7 @@ Bezier::Bezier(int numOfPoints, Vector3f *points){
         }
         binom[i][i] = 1;
     }
+    previous = next = NULL;
 }
 
 Bezier::~Bezier(){
@@ -45,6 +46,8 @@ Bezier::Bezier(const Bezier &other){
         }
         binom[i][i] = 1;
     }
+    previous = other.previous;
+    next = other.next;
 }
 
 Vector3f Bezier::getTinXYZ(float t) {
@@ -133,9 +136,12 @@ int Bezier::getNumOfPoints(){
     return numOfPoints;
 }
 
-pair<float, float> Bezier::getP0PnLinearFunction(){
+pair<float, float> Bezier::getP0P1LinearFunction(){
     float deltaY = points[1].y - points[0].y;
-    float deltaX = points[1].y - points[0].y;
+    float deltaX = points[1].x - points[0].x;
+    if (deltaX == 0) {
+        return make_pair(0, 0);
+    }
     float m = deltaY / deltaX;
     float n = points[0].y - m * points[0].x;
     return make_pair(m, n);
@@ -145,4 +151,20 @@ void Bezier::adjustPnMinus1(pair<float, float> linearFunc){
     Vector3f PnMinus1 = points[numOfPoints - 2];
     float newY = linearFunc.first * PnMinus1.x + linearFunc.second;
     points[numOfPoints - 2] = Vector3f(PnMinus1.x, newY, 0);
+}
+
+void Bezier::setNextCurve(Bezier *next){
+    this->next = next;
+}
+
+Bezier* Bezier::getNextCurve(){
+    return next;
+}
+
+void Bezier::setPreviousCurve(Bezier *previous){
+    this->previous = previous;
+}
+
+Bezier* Bezier::getPreviousCurve(){
+    return previous;
 }

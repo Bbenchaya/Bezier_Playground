@@ -17,9 +17,7 @@ Implementation:
 
 
 TODOS
-0. curve continuity
 1. split curve
-1.5. if p_0 and p_1 are in the same position, don't calculate the linear function - division by zero motha fucka
 2. convex hull calculation
 3. control points shpuld stick to the mouse pointer
 4. rotate scene
