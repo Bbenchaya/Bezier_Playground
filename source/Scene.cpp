@@ -81,12 +81,6 @@ void drawAxes(){
     glEnd();
 }
 
-//void makeStraight(vector <Vector3f> &curve, int curveIndx, int degree){
-//}
-
-//void derevativeContinuity(vector <Vector3f> &curve, int vertexIndx, int degree){
-//}
-
 void drawCurves(){
     glBegin(GL_LINE_STRIP);
     for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
@@ -182,7 +176,6 @@ void drawConvexHulls(){
             glVertex3f(linearCurve[4], linearCurve[5], 0);
             glVertex3f(linearCurve[6], linearCurve[7], 0);
             glEnd();
-            printf("x:%f y:%f\nx:%f y:%f\nx:%f y:%f\nx:%f y:%f\n", linearCurve[0], linearCurve[1], linearCurve[2], linearCurve[3], linearCurve[4], linearCurve[5], linearCurve[6], linearCurve[7]);
             continue;
         }
         glLoadName(curveIndex);
@@ -267,35 +260,11 @@ void pickObjects(int x, int y, int mode){
     glPopMatrix();
     hits = glRenderMode(GL_RENDER);
     processPicks(hits, buff, mode);
-    listHits(hits, buff);
+//    listHits(hits, buff);
     display();
 }
 
-void recalibrateControlPointsIndices(){
-    
-}
-
 void mouseClick(int button, int state, int x, int y){
-    //    GLint viewport[4];
-    //    GLuint selectionBuf[bufSize];
-    //    glGetIntegerv(GL_VIEWPORT,viewport); //reading viewport parameters
-    //    //    press=!press;
-    //    //		  if(press){
-    //    //              glMatrixMode(GL_PROJECTION);
-    //    //              glPushMatrix();	//saves current projection matrix
-    //    //              glLoadIdentity();
-    //    //              startPicking(selectionBuf); //preper selection mode
-    //    //              gluPickMatrix((GLdouble) x,(GLdouble) viewport[3]-y,1,1,viewport);
-    //    //              gluPerspective(camAngle,1,near,far);
-    //    //              glMatrixMode(GL_MODELVIEW);
-    //    ////              drawCurve(<#vector<Vector3f> &curve#>, GL_SELECT, <#int degree#>, <#int subNum#>);
-    //    //              hits=glRenderMode(GL_RENDER); //gets hits number
-    //    //              glMatrixMode(GL_PROJECTION);
-    //    //              glPopMatrix(); //restores projection matrix
-    //    //              glMatrixMode(GL_MODELVIEW);
-    //    //              processHits(hits,selectionBuf); //check hits
-    //    //          }
-    //    //
     switch (button) {
         case GLUT_LEFT_BUTTON:
             left_button_pressed = !left_button_pressed;
@@ -400,6 +369,22 @@ void movePoints(int x, int y){
     display();
 }
 
+void moveCurve(int x, int y){
+    int deltaX = old_x - x;
+    int deltaY = old_y - y;
+    if (abs(deltaX) > 3){
+        old_x = x;
+    }
+    if (abs(deltaY) > 3){
+        old_y = y;
+    }
+    Bezier *curve = curves[pickedConvexHulls[0]];
+    if (abs(deltaX) > 3 && abs(deltaY) > 3) {
+        curve->moveAllPoints(-0.1 * deltaX, 0.1 * deltaY);
+    }
+    display();
+}
+
 void mouseMotion(int x, int y){
     if (left_button_pressed) {
         if (pickedControlPoints.size() > 0) {
@@ -436,7 +421,7 @@ void mouseMotion(int x, int y){
             movePoints(x, y);
         }
         else if (pickedConvexHulls.size() > 0){
-            // TODO implement
+            moveCurve(x, y);
         }
     }
     else if (right_button_pressed){

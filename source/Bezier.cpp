@@ -81,12 +81,22 @@ void Bezier::moveControlPoint(int index, float x, float y){
 }
 
 void Bezier::moveAllPoints(float x, float y){
-    if (!isLeftmost())
+    if (isLeftmost())
         points[0] += Vector3f(x, 0, 0);
-    if (!isRightmost())
+    else
+        points[0] += Vector3f(x, y, 0);
+    if (isRightmost())
         points[numOfPoints - 1] += Vector3f(x, 0, 0);
+    else
+        points[numOfPoints - 1] += Vector3f(x, y, 0);
     for (int i = 1; i < numOfPoints - 1; i++) {
         points[i] += Vector3f(x, y, 0);
+    }
+    if (!isLeftmost()) {
+        previous->setPoint(numOfPoints - 1, points[0]);
+    }
+    if (!isRightmost()) {
+        next->setPoint(0, points[numOfPoints - 1]);
     }
 }
 

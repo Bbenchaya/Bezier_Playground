@@ -18,7 +18,6 @@ Implementation:
 
 TODOS
 1. split curve
-2. convex hull calculation
-3. control points shpuld stick to the mouse pointer
+3. control points should stick to the mouse pointer
 4. rotate scene
 5. 'd' mode
