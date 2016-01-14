@@ -42,6 +42,7 @@ private:
     Bezier *previous;
     /*
      * Since binomial coefficients are used, it is very effective to store them in advance using Pascal's triangle.
+     * Default depth of the triangle is 11, since 11 is the maximum number of cotrol points per Bezier curve.
      */
     float *binom[DEPTH_OF_PASCAL_TRIANGLE];
     
@@ -66,6 +67,8 @@ public:
     Bezier* getNextCurve();
     void setPreviousCurve(Bezier *previous);
     Bezier* getPreviousCurve();
+    bool isLinearCurve();
+    void getLinearCurveConvexHull(float **vals);
 };
 
 

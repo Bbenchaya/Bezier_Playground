@@ -82,9 +82,9 @@ void Bezier::moveControlPoint(int index, float x, float y){
 
 void Bezier::moveAllPoints(float x, float y){
     if (!isLeftmost())
-        points[0] += Vector3f(x, y, 0);
+        points[0] += Vector3f(x, 0, 0);
     if (!isRightmost())
-        points[numOfPoints - 1] += Vector3f(x, y, 0);
+        points[numOfPoints - 1] += Vector3f(x, 0, 0);
     for (int i = 1; i < numOfPoints - 1; i++) {
         points[i] += Vector3f(x, y, 0);
     }
@@ -148,6 +148,8 @@ pair<float, float> Bezier::getP0P1LinearFunction(){
 }
 
 void Bezier::adjustPnMinus1(pair<float, float> linearFunc){
+    if (numOfPoints == 2 && isLeftmost())
+        return;
     Vector3f PnMinus1 = points[numOfPoints - 2];
     float newY = linearFunc.first * PnMinus1.x + linearFunc.second;
     points[numOfPoints - 2] = Vector3f(PnMinus1.x, newY, 0);
@@ -168,3 +170,54 @@ void Bezier::setPreviousCurve(Bezier *previous){
 Bezier* Bezier::getPreviousCurve(){
     return previous;
 }
+
+bool Bezier::isLinearCurve(){
+    float deltaY = points[1].y - points[0].y;
+    float deltaX = points[1].x - points[0].x;
+    if (deltaX == 0) {
+        for (int i = 2; i < numOfPoints; i++) {
+            if (points[i].x != points[0].x) {
+                return false;
+            }
+        }
+        return true;
+    }
+    float m = deltaY / deltaX;
+    float n = points[0].y - m * points[0].x;
+    for (int i = 2; i < numOfPoints; i++) {
+        if (points[i].y != m * points[i].x + n) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Bezier::getLinearCurveConvexHull(float **vals){
+    float deltaY = points[1].y - points[0].y;
+    float deltaX = points[1].x - points[0].x;
+    if (deltaX == 0) {
+        *vals[0] = points[0].x-1;
+        *vals[1] = points[0].y;
+        *vals[2] = points[0].x+1;
+        *vals[3] = points[0].y;
+        *vals[4] = points[numOfPoints-1].x-1;
+        *vals[5] = points[numOfPoints-1].y;
+        *vals[6] = points[numOfPoints-1].x+1;
+        *vals[7] = points[numOfPoints-1].y;
+        return;
+    }
+    float m = deltaY / deltaX;
+    float inverse_m = - (1 / m);
+    float ang = fabs(atanf(inverse_m));
+    float B = 2 * sinf(ang);
+    float C = 2 * cosf(ang);
+    (*vals)[0] = points[0].x - (C / 2);
+    (*vals)[1] = points[0].y + (B / 2);
+    (*vals)[2] = points[0].x + (C / 2);
+    (*vals)[3] = points[0].y - (B / 2);
+    (*vals)[4] = points[numOfPoints-1].x - (C / 2);
+    (*vals)[5] = points[numOfPoints-1].y + (B / 2);
+    (*vals)[6] = points[numOfPoints-1].x + (C / 2);
+    (*vals)[7] = points[numOfPoints-1].y - (B / 2);
+}
+

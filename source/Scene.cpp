@@ -9,6 +9,8 @@
 #include "Bezier.hpp"
 #include "ControlPoint.hpp"
 
+#include <limits>
+
 #define ESC 27
 
 #define Z_NEAR 200.0
@@ -22,12 +24,13 @@
 #define MIN_NUM_OF_CURVES 2
 #define MAX_NUM_OF_CURVES 6
 #define DEFAULT_NUM_OF_CURVES 3
-
-using namespace std;
+#define CONTROL_POINTS_PICKING 0
+#define CONVEX_HULLS_PICKING 1
 
 vector<Bezier*> curves;
 vector<ControlPoint*> controlPoints;
 vector<int> pickedControlPoints;
+vector<int> pickedConvexHulls;
 int old_x;
 int old_y;
 int dotIndex = -1; // what is this?
@@ -77,57 +80,6 @@ void drawAxes(){
     glVertex3fv(Vector3f(0, 0, 50));  glVertex3fv(Vector3f(0, 0, -50));
     glEnd();
 }
-
-/////////////////////////////
-//surface: 2D NURBS
-//degree is the degree of each polynom in u
-//degree2 is the degree of each polynom in v
-//subNum is number of sub curve, how many parts in the whole curve
-//////////////////////////////
-//void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum){
-//    GLfloat curve[degree2][degree][3];
-//
-//    for (int o = 0; o < subNum; o++)
-//    {
-//
-//        for (int n = 0; n < 4; n++) // ring
-//        {
-//
-//            for (int m = 0; m < degree2; m++) // square
-//            {
-//
-//                for (int k = 0; k < degree; k++) //p1, p2, p3...
-//                {
-//                    for (int j = 0; j < 3; j++) //X,Y,Z
-//                        curve[m][k][j] = surface[k + m*degree + n*degree2*degree + degree2 * 4 * degree*o][j];
-//                }
-//            }
-//
-//            glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, degree, 0, 1, 3 * degree, degree2, &curve[0][0][0]);
-//            //for (int j = 0; j <= 8; j++) {
-//            //glBegin(GL_LINE_STRIP);
-//            //for (int i = 0; i <= 30; i++)
-//            //	glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
-//            //glEnd();
-//            //glBegin(GL_LINE_STRIP);
-//            //for (int i = 0; i <= 30; i++)
-//            //	glEvalCoord2f((GLfloat)j / 8.0, (GLfloat)i / 30.0);
-//            //glEnd();
-//            //}
-//
-//            for (int j = 0; j < 8; j++) {
-//
-//                glBegin(GL_QUAD_STRIP);
-//                for (int i = 0; i <= 30; i++){
-//                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
-//                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)(j + 1) / 8.0);
-//                }
-//                glEnd();
-//
-//            }
-//        }
-//    }
-//}
 
 //void makeStraight(vector <Vector3f> &curve, int curveIndx, int degree){
 //}
@@ -199,8 +151,48 @@ void drawControlPoints(int mode){
     }
 }
 
-bool inConvexHull(){
-    return false;
+void drawConvexHulls(){
+    int curveIndex = 0;
+    for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++, curveIndex++) {
+        float xMin, xMax, yMin, yMax;
+        xMin = yMin = INFINITY;
+        xMax = yMax = -INFINITY;
+        for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+            Vector3f point = (*curve)->getPoint(i);
+            if (point.x < xMin) {
+                xMin = point.x;
+            }
+            if (point.x > xMax) {
+                xMax = point.x;
+            }
+            if (point.y < yMin) {
+                yMin = point.y;
+            }
+            if (point.y > yMax) {
+                yMax = point.y;
+            }
+        }
+        float *linearCurve = new float[8];
+        if ((*curve)->isLinearCurve()) {
+            (*curve)->getLinearCurveConvexHull(&linearCurve);
+            glLoadName(curveIndex);
+            glBegin(GL_QUADS);
+            glVertex3f(linearCurve[0], linearCurve[1], 0);
+            glVertex3f(linearCurve[2], linearCurve[3], 0);
+            glVertex3f(linearCurve[4], linearCurve[5], 0);
+            glVertex3f(linearCurve[6], linearCurve[7], 0);
+            glEnd();
+            printf("x:%f y:%f\nx:%f y:%f\nx:%f y:%f\nx:%f y:%f\n", linearCurve[0], linearCurve[1], linearCurve[2], linearCurve[3], linearCurve[4], linearCurve[5], linearCurve[6], linearCurve[7]);
+            continue;
+        }
+        glLoadName(curveIndex);
+        glBegin(GL_QUADS);
+        glVertex3f(xMin, yMin, 0);
+        glVertex3f(xMin, yMax, 0);
+        glVertex3f(xMax, yMax, 0);
+        glVertex3f(xMax, yMin, 0);
+        glEnd();
+    }
 }
 
 void display(void){
@@ -228,14 +220,28 @@ void listHits(GLint hits, GLuint *names) {
     printf("\n");
 }
 
-void processPicks(GLint hits, GLuint *names) {
-    for (int i = 0; i < hits; i++) {
-        pickedControlPoints.push_back((GLubyte)names[i * 4 + 3]);
+void processPicks(GLint hits, GLuint *names, int mode) {
+    switch (mode) {
+        case CONTROL_POINTS_PICKING:
+            for (int i = 0; i < hits; i++) {
+                pickedControlPoints.push_back((GLubyte)names[i * 4 + 3]);
+            }
+            break;
+        case CONVEX_HULLS_PICKING:
+            for (int i = 0; i < hits; i++) {
+                pickedConvexHulls.push_back((GLubyte)names[i * 4 + 3]);
+            }
     }
+    
 }
 
-void pickObjects(int x, int y){
-    GLuint *buff = new GLuint[controlPoints.size()];;
+void pickObjects(int x, int y, int mode){
+    GLuint *buff;
+    if (mode == CONTROL_POINTS_PICKING) {
+        buff = new GLuint[controlPoints.size()];
+    }
+    else
+        buff = new GLuint[curves.size()];
     GLint hits, view[4];
     glSelectBuffer(64, buff);
     glGetIntegerv(GL_VIEWPORT, view);
@@ -252,12 +258,16 @@ void pickObjects(int x, int y){
     gluPickMatrix(x, window_height - y, 1.0, 1.0, view);
     gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
     glMatrixMode(GL_MODELVIEW);
-    drawControlPoints(GL_SELECT);
+    if (mode == CONTROL_POINTS_PICKING) {
+        drawControlPoints(GL_SELECT);
+    }
+    else if (mode == CONVEX_HULLS_PICKING)
+        drawConvexHulls();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
     hits = glRenderMode(GL_RENDER);
-    processPicks(hits, buff);
-    //    listHits(hits, buff);
+    processPicks(hits, buff, mode);
+    listHits(hits, buff);
     display();
 }
 
@@ -290,7 +300,8 @@ void mouseClick(int button, int state, int x, int y){
         case GLUT_LEFT_BUTTON:
             left_button_pressed = !left_button_pressed;
             if (left_button_pressed) {
-                pickObjects(x, y);
+                pickObjects(x, y, CONTROL_POINTS_PICKING);
+                pickObjects(x, y, CONVEX_HULLS_PICKING);
             }
             else {
                 // delete a curve
@@ -343,23 +354,30 @@ void mouseClick(int button, int state, int x, int y){
                 }
                 display();
                 pickedControlPoints.clear();
+                pickedConvexHulls.clear();
             }
             break;
         case GLUT_MIDDLE_BUTTON:
             middle_button_pressed = !middle_button_pressed;
             if (middle_button_pressed) {
-                pickObjects(x, y);
+                pickObjects(x, y, CONTROL_POINTS_PICKING);
+                pickObjects(x, y, CONVEX_HULLS_PICKING);
             }
-            else
+            else {
                 pickedControlPoints.clear();
+                pickedConvexHulls.clear();
+            }
             break;
         case GLUT_RIGHT_BUTTON:
             right_button_pressed = !right_button_pressed;
             if (right_button_pressed) {
-                pickObjects(x, y);
+                pickObjects(x, y, CONTROL_POINTS_PICKING);
+                pickObjects(x, y, CONVEX_HULLS_PICKING);
             }
-            else
+            else {
                 pickedControlPoints.clear();
+                pickedConvexHulls.clear();
+            }
     }
 }
 
@@ -385,9 +403,9 @@ void movePoints(int x, int y){
 void mouseMotion(int x, int y){
     if (left_button_pressed) {
         if (pickedControlPoints.size() > 0) {
-
+            
         }
-        else if (inConvexHull()){
+        else if (pickedConvexHulls.size() > 0){
             // TODO implement
         }
         else {
@@ -417,7 +435,7 @@ void mouseMotion(int x, int y){
         if (pickedControlPoints.size() > 0) {
             movePoints(x, y);
         }
-        else if (inConvexHull()){
+        else if (pickedConvexHulls.size() > 0){
             // TODO implement
         }
     }
@@ -425,7 +443,7 @@ void mouseMotion(int x, int y){
         if (pickedControlPoints.size() > 0) {
             movePoints(x, y);
         }
-        else if (inConvexHull()){
+        else if (pickedConvexHulls.size() > 0){
             // TODO implement
         }
         else{
@@ -453,6 +471,57 @@ void mouseMotion(int x, int y){
 }
 
 /////////////////////////////
+//surface: 2D NURBS
+//degree is the degree of each polynom in u
+//degree2 is the degree of each polynom in v
+//subNum is number of sub curve, how many parts in the whole curve
+//////////////////////////////
+void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum){
+    GLfloat curve[degree2][degree][3];
+    
+    for (int o = 0; o < subNum; o++)
+    {
+        
+        for (int n = 0; n < 4; n++) // ring
+        {
+            
+            for (int m = 0; m < degree2; m++) // square
+            {
+                
+                for (int k = 0; k < degree; k++) //p1, p2, p3...
+                {
+                    for (int j = 0; j < 3; j++) //X,Y,Z
+                        curve[m][k][j] = surface[k + m*degree + n*degree2*degree + degree2 * 4 * degree*o][j];
+                }
+            }
+            
+            glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, degree, 0, 1, 3 * degree, degree2, &curve[0][0][0]);
+            //for (int j = 0; j <= 8; j++) {
+            //glBegin(GL_LINE_STRIP);
+            //for (int i = 0; i <= 30; i++)
+            //	glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
+            //glEnd();
+            //glBegin(GL_LINE_STRIP);
+            //for (int i = 0; i <= 30; i++)
+            //	glEvalCoord2f((GLfloat)j / 8.0, (GLfloat)i / 30.0);
+            //glEnd();
+            //}
+            
+            for (int j = 0; j < 8; j++) {
+                
+                glBegin(GL_QUAD_STRIP);
+                for (int i = 0; i <= 30; i++){
+                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
+                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)(j + 1) / 8.0);
+                }
+                glEnd();
+                
+            }
+        }
+    }
+}
+
+/////////////////////////////
 //contour: vector contains your 1D curve. The coordinates of Pn and P0 of consecutive sub curves
 //appear just once in the vector
 //contSurface, function output, contains the 2D surface calculate from the 1D curve
@@ -460,54 +529,54 @@ void mouseMotion(int x, int y){
 //degree2 is the degree of polynom in another dymention
 //subNum is number of sub curve, how many parts in the whole curve
 //////////////////////////////
-//void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int degree, int degree2,int subNum){
-//    for (int i = 0; i < contour.size(); i++)
-//        printf("y(%d) = %f, ", i, contour[i].y);
-//    printf("\n");
-//
-//    contSurface.clear();
-//    float r, R;
-//    float const alpha = M_PI / 2.0 / (float)(degree2 - 1);
-//    float const rathio = 1.0 / cos(alpha);
-//    for (int k = 0; k < subNum; k++)
-//    {
-//        for (int m = 0; m < 4; m++) //full ring
-//        {
-//
-//            for (int i = 1, j = 0; j < degree2; i += degree - 1, j++) // square
-//            {
-//
-//                for (int l = 0; l < degree; l++) // part of ring
-//                {
-//                    Vector3f p1, n1;
-//
-//                    if (l == 0 || l == degree - 1)
-//                    {
-//                        r = contour[(degree - 1) * k + l].y;
-//                        if (j == 0 || j == degree2 - 1)
-//                            p1 = Vector3f(contour[(degree - 1) * k + l].x, r*sin((float)((degree2 - 1) * m + j)*alpha), r*cos((float)((degree2 - 1) * m + j)*alpha));
-//                        else
-//                        {
-//                            R = r*rathio;
-//                            p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
-//                        }
-//
-//                    }
-//                    else
-//                    {
-//                        if (j >0 && j < degree2 - 1)
-//                            R = contour[(degree - 1) * k + l].y*rathio;
-//                        else R = contour[(degree - 1) * k + l].y;
-//
-//                        p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
-//                    }
-//                    contSurface.push_back(p1);
-//
-//                }
-//            }
-//        }
-//    }
-//}
+void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int degree, int degree2,int subNum){
+    for (int i = 0; i < contour.size(); i++)
+        printf("y(%d) = %f, ", i, contour[i].y);
+    printf("\n");
+    
+    contSurface.clear();
+    float r, R;
+    float const alpha = M_PI / 2.0 / (float)(degree2 - 1);
+    float const rathio = 1.0 / cos(alpha);
+    for (int k = 0; k < subNum; k++)
+    {
+        for (int m = 0; m < 4; m++) //full ring
+        {
+            
+            for (int i = 1, j = 0; j < degree2; i += degree - 1, j++) // square
+            {
+                
+                for (int l = 0; l < degree; l++) // part of ring
+                {
+                    Vector3f p1, n1;
+                    
+                    if (l == 0 || l == degree - 1)
+                    {
+                        r = contour[(degree - 1) * k + l].y;
+                        if (j == 0 || j == degree2 - 1)
+                            p1 = Vector3f(contour[(degree - 1) * k + l].x, r*sin((float)((degree2 - 1) * m + j)*alpha), r*cos((float)((degree2 - 1) * m + j)*alpha));
+                        else
+                        {
+                            R = r*rathio;
+                            p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
+                        }
+                        
+                    }
+                    else
+                    {
+                        if (j >0 && j < degree2 - 1)
+                            R = contour[(degree - 1) * k + l].y*rathio;
+                        else R = contour[(degree - 1) * k + l].y;
+                        
+                        p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
+                    }
+                    contSurface.push_back(p1);
+                    
+                }
+            }
+        }
+    }
+}
 
 void generateCurves(){
     Vector3f *v1 = new Vector3f[numOfControlPointsPerCurve];
@@ -632,6 +701,7 @@ void clearVectors(){
     controlPoints.clear();
     curves.clear();
     pickedControlPoints.clear();
+    pickedConvexHulls.clear();
 }
 
 void readKey(unsigned char key, int x, int y){
