@@ -10,7 +10,7 @@
 
 ControlPoint::ControlPoint(int index, Bezier *curve){
     this->index = index;
-    this-> curve = curve;
+    this->curve = curve;
 }
 
 void ControlPoint::translate(int x, int y){

@@ -62,9 +62,50 @@ Vector3f Bezier::getTinXYZ(float t) {
     return Vector3f(x, y, z);
 }
 
+void deCasteljau(int depth, int index, Vector3f *midpoints, Vector3f *newPointsLeft, Vector3f *newPointsRight){
+    if (depth == 1){
+        newPointsLeft[index] = (midpoints[0] + midpoints[1]) / 2;
+        newPointsRight[0] = (midpoints[0] + midpoints[1]) / 2;
+        return;
+    }
+    Vector3f *newMidPoints = new Vector3f[depth];
+    for (int i = 0; i < depth; i++) {
+        newMidPoints[i] = (midpoints[i] + midpoints[i + 1]) / 2;
+    }
+    newPointsLeft[index] = newMidPoints[0];
+    newPointsRight[depth - index] = newMidPoints[depth - 1];
+    deCasteljau(depth - 1, index + 1, newMidPoints, newPointsLeft, newPointsRight);
+}
+
 Bezier** Bezier::split(){
     Bezier **res = new Bezier*[2];
-    // TODO implement
+    Vector3f *midpoints = new Vector3f[numOfPoints];
+    for (int i = 0; i < numOfPoints; i++) {
+        midpoints[i] = points[i];
+    }
+    Vector3f *newPointsLeft = new Vector3f[numOfPoints];
+    Vector3f *newPointsRight = new Vector3f[numOfPoints];
+    newPointsLeft[0] = points[0];
+    newPointsRight[numOfPoints - 1] = points[numOfPoints - 1];
+    deCasteljau(numOfPoints - 1, 1, midpoints, newPointsLeft, newPointsRight);
+    Bezier *left = new Bezier(numOfPoints, newPointsLeft);
+    Bezier *right = new Bezier(numOfPoints, newPointsRight);
+    if (!isLeftmost()) {
+        left->setPreviousCurve(this->getPreviousCurve());
+        (this->getPreviousCurve())->setNextCurve(left);
+    }
+    else
+        left->setExtremum(LEFTMOST);
+    if (!isRightmost()) {
+        right->setNextCurve(this->getNextCurve());
+        (this->getNextCurve())->setPreviousCurve(right);
+    }
+    else
+        right->setExtremum(RIGHTMOST);
+    left->setNextCurve(right);
+    right->setPreviousCurve(left);
+    res[0] = left;
+    res[1] = right;
     return res;
 }
 

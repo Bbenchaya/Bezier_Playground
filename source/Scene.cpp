@@ -344,6 +344,23 @@ void mouseClick(int button, int state, int x, int y){
                 pickObjects(x, y, CONVEX_HULLS_PICKING);
             }
             else {
+                if (pickedControlPoints.size() == 0 && pickedConvexHulls.size() > 0 && curves.size() < MAX_NUM_OF_CURVES) {
+                    int index = pickedConvexHulls[0];
+                    Bezier **newCurves = curves[index]->split();
+                    curves.erase(curves.begin() + index);
+                    vector<Bezier*>::iterator insertion = curves.begin() + index;
+                    insertion = curves.insert(insertion, newCurves[1]);
+                    insertion = curves.insert(insertion, newCurves[0]);
+                    controlPoints.clear();
+                    int curveNum = 0;
+                    for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++, curveNum++) {
+                        for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+                            ControlPoint* cp = new ControlPoint(i, *curve);
+                            controlPoints.push_back(cp);
+                        }
+                    }
+                    display();
+                }
                 pickedControlPoints.clear();
                 pickedConvexHulls.clear();
             }
