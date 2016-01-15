@@ -434,28 +434,6 @@ void mouseMotion(int x, int y){
                 glRotatef(0.1 * (deltaY > 0 ? 1 : -1), 0, 0, 1);
             display();
         }
-        //        else {
-        //            if (old_x - x > 0){
-        //                glRotatef(-ROTATION_DEGREE, 0, 1, 1);
-        //                display();
-        //                old_x = x;
-        //            }
-        //            else if (old_x - x < 0){
-        //                glRotatef(ROTATION_DEGREE, 0, 1, 1);
-        //                display();
-        //                old_x = x;
-        //            }
-        //            else if (old_y - y > 0){
-        //                glRotatef(-ROTATION_DEGREE, 1, 0, 1);
-        //                display();
-        //                old_y = y;
-        //            }
-        //            else if (old_y - y < 0){
-        //                glRotatef(ROTATION_DEGREE, 1, 0, 1);
-        //                display();
-        //                old_y = y;
-        //            }
-        //        }
     }
     else if (middle_button_pressed){
         if (design_mode && pickedControlPoints.size() > 0) {
@@ -681,36 +659,33 @@ void init(){
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(0, 0, -100);
-    //    glLineWidth(4);
-    //    glClearColor(0, 0, 0, 1);
-    //    last_Point_X = 0;
-    //    firstPoint = Vector3f(0,0,0);
-    //    lastPoint = Vector3f(last_Point_X, 0, 0);
-    //    glEnable(GL_MAP2_VERTEX_3);
-    //glEnable(GL_MAP1_VERTEX_3);
-    //    glEnable(GL_AUTO_NORMAL);
-    //    glEnable(GL_NORMALIZE);
+    glLineWidth(4);
+    glClearColor(0, 0, 0, 1);
+    glEnable(GL_MAP2_VERTEX_3);
+//    glEnable(GL_MAP1_VERTEX_3);
+    glEnable(GL_AUTO_NORMAL);
+    glEnable(GL_NORMALIZE);
     glEnable(GL_DEPTH_TEST);
-    //    glEnable(GL_LIGHTING);
-    //    glEnable(GL_LIGHT0);
-    //GLfloat light_direction[]={0,-1,0};
-    //    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
-    //    GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
-    //    GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
-    //    GLfloat light_position[] = { 0,0.0,1,0 };
-    //GLfloat angle[] = {20.0};
-    //    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
-    //    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
-    //    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    //    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    //    GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
-    //    GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
-    //    GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
-    //    GLfloat low_sh[] = { 5.0 };
-    //    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
-    //    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
-    //    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
-    initLights();
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+//    GLfloat light_direction[]={0,-1,0};
+    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
+    GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
+    GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
+    GLfloat light_position[] = { 0,0.0,1,0 };
+//    GLfloat angle[] = {20.0};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
+    GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
+    GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
+    GLfloat low_sh[] = { 5.0 };
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
+//    initLights();
     generateCurves();
 }
 
@@ -763,7 +738,9 @@ void readKey(unsigned char key, int x, int y){
         contour.push_back(curves.back()->getPoint(numOfControlPointsPerCurve - 1));
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glLoadIdentity();
-        glTranslatef(0, 0, 100);
+        glTranslatef(0, 0, -100);
+        drawAxes();
+        //        glutSolidTeapot(30);
         calcSurface(contour, surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
         drawSurface(surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
         glFlush();
