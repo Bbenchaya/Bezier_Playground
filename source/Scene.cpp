@@ -44,6 +44,14 @@ GLfloat window_height = 512;
 GLfloat camAngle;
 GLint hits;
 GLfloat zValuesForMouseMotion[4];
+GLfloat rotationMatrix[16] = {1, 0, 0, 0,
+                                0, 1, 0, 0,
+                                0, 0, 1, 0,
+                                0, 0, 0, 1};
+GLfloat translationMatrix[16] = {1, 0, 0, 0,
+                                    0, 1, 0, 0,
+                                    0, 0, 1, 0,
+                                    0, 0, 0, 1};
 
 void printModelviewMatrix(){
     float modelviewMatrix[16];
@@ -189,13 +197,147 @@ void drawConvexHulls(){
     }
 }
 
-void display(void){
+void display(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     drawAxes();
-    //    drawCurve(curve, GL_RENDER, ROTATION_DEGREE, control_points_num);
     drawCurves();
     drawControlPoints(GL_RENDER);
     glFlush();
+}
+
+
+/////////////////////////////
+//surface: 2D NURBS
+//degree is the degree of each polynom in u
+//degree2 is the degree of each polynom in v
+//subNum is number of sub curve, how many parts in the whole curve
+//////////////////////////////
+void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum){
+    GLfloat curve[degree2][degree][3];
+    
+    for (int o = 0; o < subNum; o++)
+    {
+        
+        for (int n = 0; n < 4; n++) // ring
+        {
+            
+            for (int m = 0; m < degree2; m++) // square
+            {
+                
+                for (int k = 0; k < degree; k++) //p1, p2, p3...
+                {
+                    for (int j = 0; j < 3; j++) //X,Y,Z
+                        curve[m][k][j] = surface[k + m*degree + n*degree2*degree + degree2 * 4 * degree*o][j];
+                }
+            }
+            
+            glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, degree, 0, 1, 3 * degree, degree2, &curve[0][0][0]);
+            //for (int j = 0; j <= 8; j++) {
+            //glBegin(GL_LINE_STRIP);
+            //for (int i = 0; i <= 30; i++)
+            //	glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
+            //glEnd();
+            //glBegin(GL_LINE_STRIP);
+            //for (int i = 0; i <= 30; i++)
+            //	glEvalCoord2f((GLfloat)j / 8.0, (GLfloat)i / 30.0);
+            //glEnd();
+            //}
+            
+            for (int j = 0; j < 8; j++) {
+                
+                glBegin(GL_QUAD_STRIP);
+                for (int i = 0; i <= 30; i++){
+                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
+                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)(j + 1) / 8.0);
+                }
+                glEnd();
+                
+            }
+        }
+    }
+}
+
+/////////////////////////////
+//contour: vector contains your 1D curve. The coordinates of Pn and P0 of consecutive sub curves
+//appear just once in the vector
+//contSurface, function output, contains the 2D surface calculate from the 1D curve
+//degree is the degree of the each polynom in t
+//degree2 is the degree of polynom in another dymention
+//subNum is number of sub curve, how many parts in the whole curve
+//////////////////////////////
+void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int degree, int degree2,int subNum){
+//    for (int i = 0; i < contour.size(); i++)
+//        printf("y(%d) = %f, ", i, contour[i].y);
+//    printf("\n");
+    
+    contSurface.clear();
+    float r, R;
+    float const alpha = M_PI / 2.0 / (float)(degree2 - 1);
+    float const rathio = 1.0 / cos(alpha);
+    for (int k = 0; k < subNum; k++)
+    {
+        for (int m = 0; m < 4; m++) //full ring
+        {
+            
+            for (int i = 1, j = 0; j < degree2; i += degree - 1, j++) // square
+            {
+                
+                for (int l = 0; l < degree; l++) // part of ring
+                {
+                    Vector3f p1, n1;
+                    
+                    if (l == 0 || l == degree - 1)
+                    {
+                        r = contour[(degree - 1) * k + l].y;
+                        if (j == 0 || j == degree2 - 1)
+                            p1 = Vector3f(contour[(degree - 1) * k + l].x, r*sin((float)((degree2 - 1) * m + j)*alpha), r*cos((float)((degree2 - 1) * m + j)*alpha));
+                        else
+                        {
+                            R = r*rathio;
+                            p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
+                        }
+                        
+                    }
+                    else
+                    {
+                        if (j >0 && j < degree2 - 1)
+                            R = contour[(degree - 1) * k + l].y*rathio;
+                        else R = contour[(degree - 1) * k + l].y;
+                        
+                        p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
+                    }
+                    contSurface.push_back(p1);
+                    
+                }
+            }
+        }
+    }
+}
+
+void displaySurface(){
+    glMatrixMode(GL_MODELVIEW);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glPushMatrix();
+    glMultMatrixf(rotationMatrix);
+    glMultMatrixf(translationMatrix);
+    drawAxes();
+    vector<Vector3f> contour;
+    vector<Vector3f> surface;
+    /*
+     * contour contains the 1D curve. For each curves, all of its control point, excluding the last,
+     * will be inserted to the vector. Only the rightmost curve will have its last control point
+     * inserted to te vector.
+     */
+    for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
+        for (int i = 0; i < numOfControlPointsPerCurve - 1; i++) {
+            contour.push_back((*curve)->getPoint(i));
+        }
+    }
+    contour.push_back(curves.back()->getPoint(numOfControlPointsPerCurve - 1));
+    calcSurface(contour, surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
+    drawSurface(surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
+    glFlush();
+    glPopMatrix();
 }
 
 void listHits(GLint hits, GLuint *names) {
@@ -423,16 +565,23 @@ void moveCurve(int x, int y){
 void mouseMotion(int x, int y){
     if (left_button_pressed) {
         if (!design_mode) {
-            // section 3
-            // FIX THIS!!!
-            float deltaX = old_x - x;
-            float deltaY = old_y - y;
-            if (abs(deltaX) > 3) {
-                glRotatef(0.1 * (deltaX > 0 ? 1 : -1), 0, 1, 0);
+            glPushMatrix();
+            glLoadIdentity();
+            if (abs(old_x - x) > 3) {
+                glRotatef((old_x - x > 0 ? -1 : 1), 0, 1, 0);
+                glMultMatrixf(rotationMatrix);
+                glGetFloatv(GL_MODELVIEW_MATRIX, rotationMatrix);
             }
-            else if (abs(deltaY) > 3)
-                glRotatef(0.1 * (deltaY > 0 ? 1 : -1), 0, 0, 1);
-            display();
+            glLoadIdentity();
+            if (abs(old_y - y) > 3) {
+                glRotatef((old_y - y > 0 ? 1 : -1), 0, 0, 1);
+                glMultMatrixf(rotationMatrix);
+                glGetFloatv(GL_MODELVIEW_MATRIX, rotationMatrix);
+            }
+            glPopMatrix();
+            old_x = x;
+            old_y = y;
+            displaySurface();
         }
     }
     else if (middle_button_pressed){
@@ -444,8 +593,16 @@ void mouseMotion(int x, int y){
             // section 4d
             moveCurve(x, y);
         }
-        else {
-            // translate surface
+        else if (!design_mode){
+//            glPushMatrix();
+//            glLoadIdentity();
+//            glTranslatef(-0.1*(old_x - x), 0.1*(old_y - y), 0);
+//            glMultMatrixf(translationMatrix);
+//            glGetFloatv(GL_MODELVIEW_MATRIX, translationMatrix);
+//            glPopMatrix();
+//            old_x = x;
+//            old_y = y;
+//            displaySurface();
         }
     }
     else if (right_button_pressed){
@@ -454,136 +611,44 @@ void mouseMotion(int x, int y){
             movePoints(x, y);
         }
         else{
-            // section 3
-            // translate surface
-            if (old_y - y > 3){
-                camAngle = fmax(15, camAngle - 0.5);
-                glMatrixMode(GL_PROJECTION);
-                glLoadIdentity();
-                gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
-                glMatrixMode(GL_MODELVIEW);
-                display();
-                old_y = y;
+            // no control points or convex hulls were selected, so zoom in\out
+            if (design_mode) {
+                if (old_y - y > 3){
+                    camAngle = fmax(15, camAngle - 0.5);
+                    glMatrixMode(GL_PROJECTION);
+                    glLoadIdentity();
+                    gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
+                    glMatrixMode(GL_MODELVIEW);
+                    display();
+                    old_y = y;
+                }
+                else if (old_y - y < -3){
+                    camAngle = fmin(140, camAngle + 0.5);
+                    glMatrixMode(GL_PROJECTION);
+                    glLoadIdentity();
+                    gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
+                    glMatrixMode(GL_MODELVIEW);
+                    display();
+                    old_y = y;
+                }
             }
-            else if (old_y - y < -3){
-                camAngle = fmin(140, camAngle + 0.5);
-                glMatrixMode(GL_PROJECTION);
+            // the system is not in design mode, so translate the Bezier surface around the scene
+            else {
+                glPushMatrix();
                 glLoadIdentity();
-                gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
-                glMatrixMode(GL_MODELVIEW);
-                display();
-                old_y = y;
+                if (abs(old_x - x) > 3 && abs(old_y - y) > 3) {
+                    glTranslatef(-0.1*(old_x - x), 0.1*(old_y - y), 0);
+                    glMultMatrixf(translationMatrix);
+                    glGetFloatv(GL_MODELVIEW_MATRIX, translationMatrix);
+                    glPopMatrix();
+                    old_x = x;
+                    old_y = y;
+                }
+                glPopMatrix();
+                displaySurface();
             }
         }
         
-    }
-}
-
-/////////////////////////////
-//surface: 2D NURBS
-//degree is the degree of each polynom in u
-//degree2 is the degree of each polynom in v
-//subNum is number of sub curve, how many parts in the whole curve
-//////////////////////////////
-void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum){
-    GLfloat curve[degree2][degree][3];
-    
-    for (int o = 0; o < subNum; o++)
-    {
-        
-        for (int n = 0; n < 4; n++) // ring
-        {
-            
-            for (int m = 0; m < degree2; m++) // square
-            {
-                
-                for (int k = 0; k < degree; k++) //p1, p2, p3...
-                {
-                    for (int j = 0; j < 3; j++) //X,Y,Z
-                        curve[m][k][j] = surface[k + m*degree + n*degree2*degree + degree2 * 4 * degree*o][j];
-                }
-            }
-            
-            glMap2f(GL_MAP2_VERTEX_3, 0, 1, 3, degree, 0, 1, 3 * degree, degree2, &curve[0][0][0]);
-            //for (int j = 0; j <= 8; j++) {
-            //glBegin(GL_LINE_STRIP);
-            //for (int i = 0; i <= 30; i++)
-            //	glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
-            //glEnd();
-            //glBegin(GL_LINE_STRIP);
-            //for (int i = 0; i <= 30; i++)
-            //	glEvalCoord2f((GLfloat)j / 8.0, (GLfloat)i / 30.0);
-            //glEnd();
-            //}
-            
-            for (int j = 0; j < 8; j++) {
-                
-                glBegin(GL_QUAD_STRIP);
-                for (int i = 0; i <= 30; i++){
-                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)j / 8.0);
-                    glEvalCoord2f((GLfloat)i / 30.0, (GLfloat)(j + 1) / 8.0);
-                }
-                glEnd();
-                
-            }
-        }
-    }
-}
-
-/////////////////////////////
-//contour: vector contains your 1D curve. The coordinates of Pn and P0 of consecutive sub curves
-//appear just once in the vector
-//contSurface, function output, contains the 2D surface calculate from the 1D curve
-//degree is the degree of the each polynom in t
-//degree2 is the degree of polynom in another dymention
-//subNum is number of sub curve, how many parts in the whole curve
-//////////////////////////////
-void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int degree, int degree2,int subNum){
-    for (int i = 0; i < contour.size(); i++)
-        printf("y(%d) = %f, ", i, contour[i].y);
-    printf("\n");
-    
-    contSurface.clear();
-    float r, R;
-    float const alpha = M_PI / 2.0 / (float)(degree2 - 1);
-    float const rathio = 1.0 / cos(alpha);
-    for (int k = 0; k < subNum; k++)
-    {
-        for (int m = 0; m < 4; m++) //full ring
-        {
-            
-            for (int i = 1, j = 0; j < degree2; i += degree - 1, j++) // square
-            {
-                
-                for (int l = 0; l < degree; l++) // part of ring
-                {
-                    Vector3f p1, n1;
-                    
-                    if (l == 0 || l == degree - 1)
-                    {
-                        r = contour[(degree - 1) * k + l].y;
-                        if (j == 0 || j == degree2 - 1)
-                            p1 = Vector3f(contour[(degree - 1) * k + l].x, r*sin((float)((degree2 - 1) * m + j)*alpha), r*cos((float)((degree2 - 1) * m + j)*alpha));
-                        else
-                        {
-                            R = r*rathio;
-                            p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
-                        }
-                        
-                    }
-                    else
-                    {
-                        if (j >0 && j < degree2 - 1)
-                            R = contour[(degree - 1) * k + l].y*rathio;
-                        else R = contour[(degree - 1) * k + l].y;
-                        
-                        p1 = Vector3f(contour[(degree - 1) * k + l].x, R*sin((float)((degree2 - 1) * m + j)*alpha), R*cos((float)((degree2 - 1) * m + j)*alpha));
-                    }
-                    contSurface.push_back(p1);
-                    
-                }
-            }
-        }
     }
 }
 
@@ -662,18 +727,18 @@ void init(){
     glLineWidth(4);
     glClearColor(0, 0, 0, 1);
     glEnable(GL_MAP2_VERTEX_3);
-//    glEnable(GL_MAP1_VERTEX_3);
+    //    glEnable(GL_MAP1_VERTEX_3);
     glEnable(GL_AUTO_NORMAL);
     glEnable(GL_NORMALIZE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-//    GLfloat light_direction[]={0,-1,0};
+    //    GLfloat light_direction[]={0,-1,0};
     GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
     GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
     GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
     GLfloat light_position[] = { 0,0.0,1,0 };
-//    GLfloat angle[] = {20.0};
+    //    GLfloat angle[] = {20.0};
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
@@ -685,7 +750,7 @@ void init(){
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
-//    initLights();
+    //    initLights();
     generateCurves();
 }
 
@@ -714,44 +779,33 @@ void readKey(unsigned char key, int x, int y){
     if ('0' <= key && key <= '9') {
         cout << "Design mode. Number of inner control points per curve: " << key << endl;
         design_mode = true;
+        init();
         numOfControlPointsPerCurve = key - 48 + 2; // map key's ASCII value to its symbolic value, add the two outer points
         clearVectors();
         generateCurves();
         display();
+        glLoadIdentity();
+        glGetFloatv(GL_MODELVIEW_MATRIX, rotationMatrix);
+        glGetFloatv(GL_MODELVIEW_MATRIX, translationMatrix);
+        glTranslatef(0, 0, -100);
         return;
     }
     if (key == 'd') {
         design_mode = false;
         cout << "3D object mode" << endl;
-        vector<Vector3f> contour;
-        vector<Vector3f> surface;
-        /*
-         * contour contains the 1D curve. For each curves, all of its control point, excluding the last,
-         * will be inserted to the vector. Only the rightmost curve will have its last control point
-         * inserted to te vector.
-         */
-        for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
-            for (int i = 0; i < numOfControlPointsPerCurve - 1; i++) {
-                contour.push_back((*curve)->getPoint(i));
-            }
-        }
-        contour.push_back(curves.back()->getPoint(numOfControlPointsPerCurve - 1));
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glLoadIdentity();
-        glTranslatef(0, 0, -100);
-        drawAxes();
-        //        glutSolidTeapot(30);
-        calcSurface(contour, surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
-        drawSurface(surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
-        glFlush();
+        glPushMatrix();
+        displaySurface();
+        glPopMatrix();
         return;
     }
     if (key == 'r' || key == 'R') {
         cout << "RESETTING SCENE" << endl;
         clearVectors();
         init();
-        //        glLoadIdentity();
-        //        glTranslatef(0.0f, 0, -100.0f);
+        glLoadIdentity();
+        glGetFloatv(GL_MODELVIEW_MATRIX, rotationMatrix);
+        glGetFloatv(GL_MODELVIEW_MATRIX, translationMatrix);
+        glTranslatef(0, 0, -100);
         display();
     }
     if (key == ESC) {
@@ -781,7 +835,6 @@ int main(int argc, char **argv){
     //    glutReshapeFunc(reshape);
     glutMotionFunc(mouseMotion);
     glutMouseFunc(mouseClick);
-    //    glutTimerFunc(5, timerFunc, 0);
     glutMainLoop();
     return 0;
     
