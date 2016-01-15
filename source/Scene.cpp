@@ -43,6 +43,7 @@ GLfloat window_width = 512;
 GLfloat window_height = 512;
 GLfloat camAngle;
 GLint hits;
+GLfloat zValuesForMouseMotion[4];
 
 void printModelviewMatrix(){
     float modelviewMatrix[16];
@@ -235,9 +236,10 @@ void pickObjects(int x, int y, int mode){
     }
     else
         buff = new GLuint[curves.size()];
-    GLint hits, view[4];
+    GLint hits, viewport[4];
+    glReadPixels((GLdouble) x, (GLdouble) viewport[3] - y, 2, 2, GL_DEPTH_COMPONENT, GL_FLOAT, zValuesForMouseMotion);
     glSelectBuffer(64, buff);
-    glGetIntegerv(GL_VIEWPORT, view);
+    glGetIntegerv(GL_VIEWPORT, viewport);
     glRenderMode(GL_SELECT);
     glInitNames();
     glPushName(0);
@@ -248,7 +250,7 @@ void pickObjects(int x, int y, int mode){
      * The window's top-left corner is (0,0), but in the picking matrix (0,0) is the bottom-left,
      * so we have to invert the Y values.
      */
-    gluPickMatrix(x, window_height - y, 1.0, 1.0, view);
+    gluPickMatrix(x, window_height - y, 1, 1, viewport);
     gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
     glMatrixMode(GL_MODELVIEW);
     if (mode == CONTROL_POINTS_PICKING) {
@@ -260,7 +262,7 @@ void pickObjects(int x, int y, int mode){
     glPopMatrix();
     hits = glRenderMode(GL_RENDER);
     processPicks(hits, buff, mode);
-//    listHits(hits, buff);
+    //    listHits(hits, buff);
     display();
 }
 
@@ -268,11 +270,14 @@ void mouseClick(int button, int state, int x, int y){
     switch (button) {
         case GLUT_LEFT_BUTTON:
             left_button_pressed = !left_button_pressed;
+            if (!design_mode)
+                return;
             if (left_button_pressed) {
                 pickObjects(x, y, CONTROL_POINTS_PICKING);
                 pickObjects(x, y, CONVEX_HULLS_PICKING);
             }
             else {
+                // section 4b,c,f
                 // delete a curve
                 for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
                     /*
@@ -328,6 +333,8 @@ void mouseClick(int button, int state, int x, int y){
             break;
         case GLUT_MIDDLE_BUTTON:
             middle_button_pressed = !middle_button_pressed;
+            if (!design_mode)
+                return;
             if (middle_button_pressed) {
                 pickObjects(x, y, CONTROL_POINTS_PICKING);
                 pickObjects(x, y, CONVEX_HULLS_PICKING);
@@ -339,11 +346,14 @@ void mouseClick(int button, int state, int x, int y){
             break;
         case GLUT_RIGHT_BUTTON:
             right_button_pressed = !right_button_pressed;
+            if (!design_mode)
+                return;
             if (right_button_pressed) {
                 pickObjects(x, y, CONTROL_POINTS_PICKING);
                 pickObjects(x, y, CONVEX_HULLS_PICKING);
             }
             else {
+                // section 4e
                 if (pickedControlPoints.size() == 0 && pickedConvexHulls.size() > 0 && curves.size() < MAX_NUM_OF_CURVES) {
                     int index = pickedConvexHulls[0];
                     Bezier **newCurves = curves[index]->split();
@@ -404,51 +414,62 @@ void moveCurve(int x, int y){
 
 void mouseMotion(int x, int y){
     if (left_button_pressed) {
-        if (pickedControlPoints.size() > 0) {
-            
+        if (!design_mode) {
+            // section 3
+            // FIX THIS!!!
+            float deltaX = old_x - x;
+            float deltaY = old_y - y;
+            if (abs(deltaX) > 3) {
+                glRotatef(0.1 * (deltaX > 0 ? 1 : -1), 0, 1, 0);
+            }
+            else if (abs(deltaY) > 3)
+                glRotatef(0.1 * (deltaY > 0 ? 1 : -1), 0, 0, 1);
+            display();
         }
-        else if (pickedConvexHulls.size() > 0){
-            // TODO implement
-        }
-        else {
-            if (old_x - x > 0){
-                glRotatef(-ROTATION_DEGREE, 0, 1, 1);
-                display();
-                old_x = x;
-            }
-            else if (old_x - x < 0){
-                glRotatef(ROTATION_DEGREE, 0, 1, 1);
-                display();
-                old_x = x;
-            }
-            else if (old_y - y > 0){
-                glRotatef(-ROTATION_DEGREE, 1, 0, 1);
-                display();
-                old_y = y;
-            }
-            else if (old_y - y < 0){
-                glRotatef(ROTATION_DEGREE, 1, 0, 1);
-                display();
-                old_y = y;
-            }
-        }
+        //        else {
+        //            if (old_x - x > 0){
+        //                glRotatef(-ROTATION_DEGREE, 0, 1, 1);
+        //                display();
+        //                old_x = x;
+        //            }
+        //            else if (old_x - x < 0){
+        //                glRotatef(ROTATION_DEGREE, 0, 1, 1);
+        //                display();
+        //                old_x = x;
+        //            }
+        //            else if (old_y - y > 0){
+        //                glRotatef(-ROTATION_DEGREE, 1, 0, 1);
+        //                display();
+        //                old_y = y;
+        //            }
+        //            else if (old_y - y < 0){
+        //                glRotatef(ROTATION_DEGREE, 1, 0, 1);
+        //                display();
+        //                old_y = y;
+        //            }
+        //        }
     }
     else if (middle_button_pressed){
-        if (pickedControlPoints.size() > 0) {
+        if (design_mode && pickedControlPoints.size() > 0) {
+            // section 4a
             movePoints(x, y);
         }
-        else if (pickedConvexHulls.size() > 0){
+        else if (design_mode && pickedConvexHulls.size() > 0){
+            // section 4d
             moveCurve(x, y);
+        }
+        else {
+            // translate surface
         }
     }
     else if (right_button_pressed){
-        if (pickedControlPoints.size() > 0) {
+        if (design_mode && pickedControlPoints.size() > 0) {
+            // section 4a
             movePoints(x, y);
         }
-        else if (pickedConvexHulls.size() > 0){
-            // TODO implement
-        }
         else{
+            // section 3
+            // translate surface
             if (old_y - y > 3){
                 camAngle = fmax(15, camAngle - 0.5);
                 glMatrixMode(GL_PROJECTION);
@@ -719,9 +740,25 @@ void readKey(unsigned char key, int x, int y){
     if (key == 'd') {
         design_mode = false;
         cout << "3D object mode" << endl;
-        //3d mode
-        //            calcSurface(<#vector<Vector3f> &contour#>, <#vector<Vector3f> &contSurface#>, <#int degree#>, <#int degree2#>, <#int subNum#>)
-        //            drawSurface(<#vector<Vector3f> &surface#>, <#int degree#>, <#int degree2#>, <#int subNum#>)
+        vector<Vector3f> contour;
+        vector<Vector3f> surface;
+        /*
+         * contour contains the 1D curve. For each curves, all of its control point, excluding the last,
+         * will be inserted to the vector. Only the rightmost curve will have its last control point
+         * inserted to te vector.
+         */
+        for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
+            for (int i = 0; i < numOfControlPointsPerCurve - 1; i++) {
+                contour.push_back((*curve)->getPoint(i));
+            }
+        }
+        contour.push_back(curves.back()->getPoint(numOfControlPointsPerCurve - 1));
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glLoadIdentity();
+        glTranslatef(0, 0, 100);
+        calcSurface(contour, surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
+        drawSurface(surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
+        glFlush();
         return;
     }
     if (key == 'r' || key == 'R') {
