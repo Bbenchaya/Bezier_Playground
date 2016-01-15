@@ -69,6 +69,7 @@ public:
     Bezier* getPreviousCurve();
     bool isLinearCurve();
     void getLinearCurveConvexHull(float **vals);
+    void flatten();
 };
 
 

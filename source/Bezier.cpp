@@ -272,3 +272,29 @@ void Bezier::getLinearCurveConvexHull(float **vals){
     (*vals)[7] = points[numOfPoints-1].y - (B / 2);
 }
 
+void Bezier::flatten(){
+    float deltaX = points[numOfPoints - 1].x - points[0].x;
+    float deltaY = points[numOfPoints - 1].y - points[0].y;
+    /*
+     * If the two outer control points are one atop of the other, then there's no gradient between them, and points
+     * should be repositioned in a specific manner. Otherwise, calculate the linear function between the two points,
+     * and place all the inner points in equal intervals on that function.
+     */
+    if (deltaX == 0) {
+        deltaY = (points[numOfPoints - 1].y - points[0].y) / (numOfPoints - 1);
+        float x = points[0].x;
+        float y = points[0].y + deltaY;
+        for (int i = 1; i < numOfPoints - 1; i++, y += deltaY) {
+            points[i] = Vector3f(x, y, 0);
+        }
+    }
+    else {
+        float m = deltaY / deltaX;
+        float n = points[0].y - m * points[0].x;
+        deltaX = (points[numOfPoints - 1].x - points[0].x) / (numOfPoints - 1);
+        float x = points[0].x + deltaX;
+        for (int i = 1; i < numOfPoints - 1; i++, x += deltaX) {
+            points[i] = Vector3f(x, m * x + n, 0);
+        }
+    }
+}

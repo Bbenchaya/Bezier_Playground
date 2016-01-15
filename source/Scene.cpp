@@ -277,54 +277,62 @@ void mouseClick(int button, int state, int x, int y){
                 pickObjects(x, y, CONVEX_HULLS_PICKING);
             }
             else {
-                // section 4b,c,f
-                // delete a curve
-                for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
-                    /*
-                     * The picked point has index 0 in the curve
-                     */
-                    if (*pickedPoint % numOfControlPointsPerCurve == 0 && curves.size() > MIN_NUM_OF_CURVES) {
-                        Bezier *curve = controlPoints[*pickedPoint]->getCurve();
-                        if (curve->isLeftmost()) {
-                            curves[1]->clamp(LEFTMOST, 0);
-                            curves[1]->setPreviousCurve(NULL);
-                            curves.erase(curves.begin());
-                            controlPoints.erase(controlPoints.begin(), controlPoints.begin() + numOfControlPointsPerCurve);
-                        }
-                        else if (curve->isRightmost()) {
-                            Bezier *last = curves[curves.size() - 1];
-                            float newX = last->getPoint(numOfControlPointsPerCurve - 1).x;
-                            curves.pop_back();
-                            curves[curves.size() - 1]->clamp(RIGHTMOST, newX);
-                            curves[curves.size() - 1]->setNextCurve(NULL);
-                            for (int i = 0; i < numOfControlPointsPerCurve; i++) {
-                                controlPoints.pop_back();
+                // if control points were picked, than a curve should be removed or two curves should be made continuous
+                if (pickedControlPoints.size() > 0) {
+                    // section 4b,c
+                    for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
+                        /*
+                         * The picked point has index 0 in the curve - subsection b
+                         */
+                        if (*pickedPoint % numOfControlPointsPerCurve == 0 && curves.size() > MIN_NUM_OF_CURVES) {
+                            Bezier *curve = controlPoints[*pickedPoint]->getCurve();
+                            if (curve->isLeftmost()) {
+                                curves[1]->clamp(LEFTMOST, 0);
+                                curves[1]->setPreviousCurve(NULL);
+                                curves.erase(curves.begin());
+                                controlPoints.erase(controlPoints.begin(), controlPoints.begin() + numOfControlPointsPerCurve);
+                            }
+                            else if (curve->isRightmost()) {
+                                Bezier *last = curves[curves.size() - 1];
+                                float newX = last->getPoint(numOfControlPointsPerCurve - 1).x;
+                                curves.pop_back();
+                                curves[curves.size() - 1]->clamp(RIGHTMOST, newX);
+                                curves[curves.size() - 1]->setNextCurve(NULL);
+                                for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+                                    controlPoints.pop_back();
+                                }
+                            }
+                            else {
+                                int index = *pickedPoint / numOfControlPointsPerCurve;
+                                Bezier *toRemove = curves[index];
+                                Vector3f pn = toRemove->getPoint(numOfControlPointsPerCurve - 1);
+                                curves[index - 1]->setPoint(numOfControlPointsPerCurve - 1, pn);
+                                curves.erase(curves.begin() + index);
+                                controlPoints.erase(controlPoints.begin() + index * numOfControlPointsPerCurve, controlPoints.begin() + (index + 1) * numOfControlPointsPerCurve);
                             }
                         }
-                        else {
-                            int index = *pickedPoint / numOfControlPointsPerCurve;
-                            Bezier *toRemove = curves[index];
-                            Vector3f pn = toRemove->getPoint(numOfControlPointsPerCurve - 1);
-                            curves[index - 1]->setPoint(numOfControlPointsPerCurve - 1, pn);
-                            curves.erase(curves.begin() + index);
-                            controlPoints.erase(controlPoints.begin() + index * numOfControlPointsPerCurve, controlPoints.begin() + (index + 1) * numOfControlPointsPerCurve);
+                        /*
+                         * The picked point has index 1 in the curve - subsection c
+                         */
+                        if (*pickedPoint % numOfControlPointsPerCurve == 1 && curves.size() < MAX_NUM_OF_CURVES) {
+                            Bezier *curve = controlPoints[*pickedPoint]->getCurve();
+                            if (curve->isLeftmost()) {
+                                continue;
+                            }
+                            Bezier *previous = curve->getPreviousCurve();
+                            pair<float, float> linearFunc = curve->getP0P1LinearFunction();
+                            if (linearFunc.first == 0 && linearFunc.second == 0) {
+                                continue;
+                            }
+                            previous->adjustPnMinus1(linearFunc);
                         }
                     }
-                    /*
-                     * The picked point has index 1 in the curve
-                     */
-                    if (*pickedPoint % numOfControlPointsPerCurve == 1 && curves.size() < MAX_NUM_OF_CURVES) {
-                        Bezier *curve = controlPoints[*pickedPoint]->getCurve();
-                        if (curve->isLeftmost()) {
-                            continue;
-                        }
-                        Bezier *previous = curve->getPreviousCurve();
-                        pair<float, float> linearFunc = curve->getP0P1LinearFunction();
-                        if (linearFunc.first == 0 && linearFunc.second == 0) {
-                            continue;
-                        }
-                        previous->adjustPnMinus1(linearFunc);
-                    }
+                    
+                }
+                // no control points were chosen, so if a covnex hull was chosen, it should linearize the curve
+                else if (pickedConvexHulls.size() > 0) {
+                    Bezier *curve = curves[pickedConvexHulls[0]];
+                    curve->flatten();
                 }
                 display();
                 pickedControlPoints.clear();
