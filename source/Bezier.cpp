@@ -109,19 +109,19 @@ Bezier** Bezier::split(){
     return res;
 }
 
-void Bezier::moveControlPoint(int index, float x, float y){
+void Bezier::moveControlPoint(int index, GLdouble x, GLdouble y){
     if (isLeftmost() && index == 0) {
-        points[index] += Vector3f(x, 0, 0);
+        points[index] = Vector3f(x, 0, 0);
         return;
     }
     if (isRightmost() && index == numOfPoints - 1) {
-        points[index] += Vector3f(x, 0, 0);
+        points[index] = Vector3f(x, 0, 0);
         return;
     }
-    points[index] += Vector3f(x, y, 0);
+    points[index] = Vector3f(x, y, 0);
 }
 
-void Bezier::moveAllPoints(float x, float y){
+void Bezier::moveAllPoints(GLdouble x, GLdouble y){
     if (isLeftmost())
         points[0] += Vector3f(x, 0, 0);
     else
@@ -156,7 +156,7 @@ void Bezier::setExtremum(int position){
     }
 }
 
-void Bezier::clamp(int position, float newX){
+void Bezier::clamp(int position, GLdouble newX){
     setExtremum(position);
     switch (position) {
         case LEFTMOST:
@@ -187,7 +187,7 @@ int Bezier::getNumOfPoints(){
     return numOfPoints;
 }
 
-pair<float, float> Bezier::getP0P1LinearFunction(){
+pair<GLdouble, GLdouble> Bezier::getP0P1LinearFunction(){
     float deltaY = points[1].y - points[0].y;
     float deltaX = points[1].x - points[0].x;
     if (deltaX == 0) {
@@ -198,7 +198,7 @@ pair<float, float> Bezier::getP0P1LinearFunction(){
     return make_pair(m, n);
 }
 
-void Bezier::adjustPnMinus1(pair<float, float> linearFunc){
+void Bezier::adjustPnMinus1(pair<GLdouble, GLdouble> linearFunc){
     if (numOfPoints == 2 && isLeftmost())
         return;
     Vector3f PnMinus1 = points[numOfPoints - 2];
@@ -243,7 +243,7 @@ bool Bezier::isLinearCurve(){
     return true;
 }
 
-void Bezier::getLinearCurveConvexHull(float **vals){
+void Bezier::getLinearCurveConvexHull(GLdouble **vals){
     float deltaY = points[1].y - points[0].y;
     float deltaX = points[1].x - points[0].x;
     if (deltaX == 0) {

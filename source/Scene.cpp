@@ -15,9 +15,6 @@
 
 #define Z_NEAR 200.0
 #define Z_FAR 2.0
-#define bufSize 128 // WTF mate
-#define maxSize 512 //what is maxsize?
-#define ROTATION_DEGREE 1
 #define RESOLUTION 50
 #define POINT_RADIUS 1
 #define INITIAL_CURVE_LENGTH 15.0
@@ -33,7 +30,6 @@ vector<int> pickedControlPoints;
 vector<int> pickedConvexHulls;
 int old_x;
 int old_y;
-int dotIndex = -1; // what is this?
 int numOfControlPointsPerCurve;
 bool left_button_pressed;
 bool middle_button_pressed;
@@ -175,7 +171,7 @@ void drawConvexHulls(){
                 yMax = point.y;
             }
         }
-        float *linearCurve = new float[8];
+        GLdouble *linearCurve = new GLdouble[8];
         if ((*curve)->isLinearCurve()) {
             (*curve)->getLinearCurveConvexHull(&linearCurve);
             glLoadName(curveIndex);
@@ -528,18 +524,24 @@ void mouseClick(int button, int state, int x, int y){
 }
 
 void movePoints(int x, int y){
-    int newX = old_x;
-    int newY = old_y;
+    GLdouble newX, newY, newZ;
+    GLdouble modelViewMatrix[16];
+    GLdouble projectionMatrix[16];
+    GLint viewport[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, modelViewMatrix);
+    glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    gluUnProject((GLdouble) x, window_height - (GLdouble) y, 0.0, modelViewMatrix, projectionMatrix, viewport, &newX, &newY, &newZ);
     for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
-        int deltaX = old_x - x;
-        int deltaY = old_y - y;
-        if (abs(deltaX) > 3){
-            newX = x;
-        }
-        if (abs(deltaY) > 3){
-            newY = y;
-        }
-        controlPoints[*pickedPoint]->translate(-0.5 * deltaX, 0.5 * deltaY);
+//        int deltaX = old_x - x;
+//        int deltaY = old_y - y;
+//        if (abs(deltaX) > 3){
+//            newX = x;
+//        }
+//        if (abs(deltaY) > 3){
+//            newY = y;
+//        }
+        controlPoints[*pickedPoint]->translate(newX, newY);
     }
     old_x = newX;
     old_y = newY;
@@ -838,7 +840,7 @@ int main(int argc, char **argv){
     init();
     glutKeyboardFunc(readKey);
     glutDisplayFunc(display);
-//    glutReshapeFunc(reshape);
+    glutReshapeFunc(reshape);
     glutMotionFunc(mouseMotion);
     glutMouseFunc(mouseClick);
     glutMainLoop();

@@ -19,7 +19,7 @@ private:
     
 public:
     ControlPoint(int index, Bezier *curve);
-    void translate(int x, int y);
+    void translate(GLdouble x, GLdouble y);
     void adjustIndex(int delta);
     Bezier* getCurve();
     

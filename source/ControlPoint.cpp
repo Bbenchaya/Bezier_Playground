@@ -13,7 +13,7 @@ ControlPoint::ControlPoint(int index, Bezier *curve){
     this->curve = curve;
 }
 
-void ControlPoint::translate(int x, int y){
+void ControlPoint::translate(GLdouble x, GLdouble y){
     curve->moveControlPoint(index, x, y);
 }
 
