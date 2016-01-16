@@ -15,6 +15,7 @@
 		F04D52361C48E11C00279E88 /* picking2.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F04D52351C48E11C00279E88 /* picking2.cpp */; };
 		F08DAC021C43BB8000E23949 /* README.md in Sources */ = {isa = PBXBuildFile; fileRef = F08DAC011C43BB8000E23949 /* README.md */; };
 		F0CE8E2A1C4418A200F13877 /* Bezier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F0CE8E291C4418A200F13877 /* Bezier.cpp */; };
+		F0F75FDC1C4A3F670045041B /* unproject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F0F75FDB1C4A3F670045041B /* unproject.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -44,6 +45,7 @@
 		F08DAC011C43BB8000E23949 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		F0CE8E291C4418A200F13877 /* Bezier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Bezier.cpp; path = source/Bezier.cpp; sourceTree = SOURCE_ROOT; };
 		F0CE8E2B1C4418BB00F13877 /* Bezier.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = Bezier.hpp; path = include/Bezier.hpp; sourceTree = SOURCE_ROOT; };
+		F0F75FDB1C4A3F670045041B /* unproject.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = unproject.cpp; path = source/unproject.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +92,7 @@
 				F03CB7791C44F58A00B45AFA /* ControlPoint.cpp */,
 				599504201C3D3A9C005B2A3E /* Scene.cpp */,
 				F04D52351C48E11C00279E88 /* picking2.cpp */,
+				F0F75FDB1C4A3F670045041B /* unproject.cpp */,
 			);
 			name = source;
 			path = CG_ex5;
@@ -164,6 +167,7 @@
 			files = (
 				F03CB77A1C44F58A00B45AFA /* ControlPoint.cpp in Sources */,
 				F0CE8E2A1C4418A200F13877 /* Bezier.cpp in Sources */,
+				F0F75FDC1C4A3F670045041B /* unproject.cpp in Sources */,
 				F08DAC021C43BB8000E23949 /* README.md in Sources */,
 				F04D52361C48E11C00279E88 /* picking2.cpp in Sources */,
 				599504211C3D3A9C005B2A3E /* Scene.cpp in Sources */,

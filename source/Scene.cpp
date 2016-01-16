@@ -45,13 +45,13 @@ GLfloat camAngle;
 GLint hits;
 GLfloat zValuesForMouseMotion[4];
 GLfloat rotationMatrix[16] = {1, 0, 0, 0,
-                                0, 1, 0, 0,
-                                0, 0, 1, 0,
-                                0, 0, 0, 1};
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1};
 GLfloat translationMatrix[16] = {1, 0, 0, 0,
-                                    0, 1, 0, 0,
-                                    0, 0, 1, 0,
-                                    0, 0, 0, 1};
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1};
 
 void printModelviewMatrix(){
     float modelviewMatrix[16];
@@ -266,9 +266,9 @@ void drawSurface(vector <Vector3f> &surface,int degree, int degree2, int subNum)
 //subNum is number of sub curve, how many parts in the whole curve
 //////////////////////////////
 void calcSurface(vector <Vector3f> &contour, vector <Vector3f> &contSurface, int degree, int degree2,int subNum){
-//    for (int i = 0; i < contour.size(); i++)
-//        printf("y(%d) = %f, ", i, contour[i].y);
-//    printf("\n");
+    //    for (int i = 0; i < contour.size(); i++)
+    //        printf("y(%d) = %f, ", i, contour[i].y);
+    //    printf("\n");
     
     contSurface.clear();
     float r, R;
@@ -594,15 +594,18 @@ void mouseMotion(int x, int y){
             moveCurve(x, y);
         }
         else if (!design_mode){
-//            glPushMatrix();
-//            glLoadIdentity();
-//            glTranslatef(-0.1*(old_x - x), 0.1*(old_y - y), 0);
-//            glMultMatrixf(translationMatrix);
-//            glGetFloatv(GL_MODELVIEW_MATRIX, translationMatrix);
-//            glPopMatrix();
-//            old_x = x;
-//            old_y = y;
-//            displaySurface();
+            glPushMatrix();
+            glLoadIdentity();
+            if (abs(old_x - x) > 3 && abs(old_y - y) > 3) {
+                glTranslatef(-0.1*(old_x - x), 0.1*(old_y - y), 0);
+                glMultMatrixf(translationMatrix);
+                glGetFloatv(GL_MODELVIEW_MATRIX, translationMatrix);
+                glPopMatrix();
+                old_x = x;
+                old_y = y;
+            }
+            glPopMatrix();
+            displaySurface();
         }
     }
     else if (right_button_pressed){
@@ -720,7 +723,7 @@ void init(){
     glViewport(0, 0, window_width, window_height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(camAngle, 1, Z_NEAR, Z_FAR);
+    gluPerspective(camAngle, window_width / window_height, Z_NEAR, Z_FAR);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glTranslatef(0, 0, -100);
@@ -734,19 +737,19 @@ void init(){
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     //    GLfloat light_direction[]={0,-1,0};
-    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1.0};
-    GLfloat light_diffuse[] = {0.0, 1.0, 0.5, 1.0};
-    GLfloat light_specular[] = {0.0, 0.0, 0.5, 1.0};
-    GLfloat light_position[] = { 0,0.0,1,0 };
+    GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1};
+    GLfloat light_diffuse[] = {0, 1, 0.5, 1};
+    GLfloat light_specular[] = {0, 0, 0.5, 1};
+    GLfloat light_position[] = {0, 0, 1, 0};
     //    GLfloat angle[] = {20.0};
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-    GLfloat mat_a[] = { 0.3, 0.4, 0.5, 1.0 };
-    GLfloat mat_d[] = { 0.0, 0.6, 0.7, 1.0 };
-    GLfloat mat_s[] = { 0.0, 0.0, 0.8, 1.0 };
-    GLfloat low_sh[] = { 5.0 };
+    GLfloat mat_a[] = {0.3, 0.4, 0.5, 1.0};
+    GLfloat mat_d[] = {0.0, 0.6, 0.7, 1.0};
+    GLfloat mat_s[] = {0.0, 0.0, 0.8, 1.0};
+    GLfloat low_sh[] = {5.0};
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, mat_a);
     glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, mat_d);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_s);
@@ -813,15 +816,18 @@ void readKey(unsigned char key, int x, int y){
     }
 }
 
-//void reshape(int width, int height){
-//    glViewport(0, 0, (GLsizei)width, (GLsizei)height);
-//    glMatrixMode(GL_PROJECTION);
-//    glLoadIdentity();
-//    gluPerspective(camAngle, (GLfloat)width / (GLfloat)height, near, far);
-//    glMatrixMode(GL_MODELVIEW);
-//    glLoadIdentity();
-//    glTranslatef(0.0f, 0, -100.0f);
-//}
+void reshape(int width, int height){
+    glViewport(0, 0, (GLsizei) width, (GLsizei) height);
+    window_width = width;
+    window_height = height;
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(camAngle, window_width / window_height, Z_FAR, Z_FAR);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslatef(0, 0, -100);
+    display();
+}
 
 int main(int argc, char **argv){
     glutInit(&argc, argv);
@@ -832,7 +838,7 @@ int main(int argc, char **argv){
     init();
     glutKeyboardFunc(readKey);
     glutDisplayFunc(display);
-    //    glutReshapeFunc(reshape);
+//    glutReshapeFunc(reshape);
     glutMotionFunc(mouseMotion);
     glutMouseFunc(mouseClick);
     glutMainLoop();

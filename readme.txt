@@ -19,4 +19,7 @@ Implementation:
 
 
 TODOS
-3. control points should stick to the mouse pointer
+1. control points should stick to the mouse pointer
+2. fix scene rotation
+3. 3D object looks like a blob of color instead of having a nice soft transition of matte color
+4/ 3D object has some transperancy
