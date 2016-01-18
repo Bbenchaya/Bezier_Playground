@@ -201,6 +201,10 @@ void display(){
     glFlush();
 }
 
+/*
+ * The following 2 functions were provided as mandatory implemenatition, and they don't
+ * reflect our coding style or thinking process.
+ */
 
 /////////////////////////////
 //surface: 2D NURBS
@@ -324,12 +328,12 @@ void displaySurface(){
      * will be inserted to the vector. Only the rightmost curve will have its last control point
      * inserted to te vector.
      */
-    for (vector<Bezier*>::iterator curve = curves.begin(); curve != curves.end(); curve++) {
-        for (int i = 0; i < numOfControlPointsPerCurve - 1; i++) {
+    contour.push_back(curves[curves.size() - 1]->getPoint(numOfControlPointsPerCurve - 1));
+    for (vector<Bezier*>::reverse_iterator curve = curves.rbegin(); curve != curves.rend(); curve++) {
+        for (int i = numOfControlPointsPerCurve - 2; i >= 0; i--) {
             contour.push_back((*curve)->getPoint(i));
         }
     }
-    contour.push_back(curves.back()->getPoint(numOfControlPointsPerCurve - 1));
     calcSurface(contour, surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
     drawSurface(surface, numOfControlPointsPerCurve, numOfControlPointsPerCurve, curves.size());
     glFlush();
@@ -533,14 +537,6 @@ void movePoints(int x, int y){
     glGetIntegerv(GL_VIEWPORT, viewport);
     gluUnProject((GLdouble) x, window_height - (GLdouble) y, 0.0, modelViewMatrix, projectionMatrix, viewport, &newX, &newY, &newZ);
     for (vector<int>::iterator pickedPoint = pickedControlPoints.begin(); pickedPoint != pickedControlPoints.end(); pickedPoint++) {
-//        int deltaX = old_x - x;
-//        int deltaY = old_y - y;
-//        if (abs(deltaX) > 3){
-//            newX = x;
-//        }
-//        if (abs(deltaY) > 3){
-//            newY = y;
-//        }
         controlPoints[*pickedPoint]->translate(newX, newY);
     }
     old_x = newX;
@@ -570,19 +566,19 @@ void mouseMotion(int x, int y){
             glPushMatrix();
             glLoadIdentity();
             if (abs(old_x - x) > 3) {
-                glRotatef((old_x - x > 0 ? -1 : 1), 0, 1, 0);
+                glRotatef((old_x - x > 0 ? -1 : 1), rotationMatrix[4], rotationMatrix[5], rotationMatrix[6]);
                 glMultMatrixf(rotationMatrix);
                 glGetFloatv(GL_MODELVIEW_MATRIX, rotationMatrix);
+                old_x = x;
             }
             glLoadIdentity();
             if (abs(old_y - y) > 3) {
-                glRotatef((old_y - y > 0 ? 1 : -1), 0, 0, 1);
+                glRotatef((old_y - y > 0 ? 1 : -1), rotationMatrix[8], rotationMatrix[9], rotationMatrix[10]);
                 glMultMatrixf(rotationMatrix);
                 glGetFloatv(GL_MODELVIEW_MATRIX, rotationMatrix);
+                old_y = y;
             }
             glPopMatrix();
-            old_x = x;
-            old_y = y;
             displaySurface();
         }
     }
@@ -737,6 +733,7 @@ void init(){
     glEnable(GL_NORMALIZE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
+    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
     glEnable(GL_LIGHT0);
     //    GLfloat light_direction[]={0,-1,0};
     GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1};
@@ -758,10 +755,6 @@ void init(){
     //    initLights();
     generateCurves();
 }
-
-//void timerFunc(int value){
-//
-//}
 
 void recalibrateControlPoints(){
     controlPoints.clear();
@@ -835,12 +828,11 @@ int main(int argc, char **argv){
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(window_width, window_height);
-    //    glutInitWindowPosition(150, 50);
     glutCreateWindow("Bezier's playground");
     init();
     glutKeyboardFunc(readKey);
     glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
+//    glutReshapeFunc(reshape);
     glutMotionFunc(mouseMotion);
     glutMouseFunc(mouseClick);
     glutMainLoop();
