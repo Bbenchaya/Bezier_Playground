@@ -6,12 +6,6 @@
 //  Copyright © 2016 Bbenchaya. All rights reserved.
 //
 
-#ifdef __APPLE__
-#include <GLUT/GLUT.h>
-#elif __linux__
-#include "glut.h"
-#endif
-
 #ifndef Bezier_h
 #define Bezier_h
 
@@ -24,7 +18,11 @@
 
 #include "Vector3f.h"
 
-
+#ifdef __APPLE__
+#include <GLUT/GLUT.h>
+#elif __linux__
+#include "glut.h"
+#endif
 
 #define LEFTMOST 0
 #define RIGHTMOST 1

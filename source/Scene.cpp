@@ -435,12 +435,12 @@ void mouseClick(int button, int state, int x, int y){
                                 controlPoints.erase(controlPoints.begin(), controlPoints.begin() + numOfControlPointsPerCurve);
                             }
                             else if (curve->isRightmost()) {
-                                Bezier *last = curves[curves.size() - 1];
+                                Bezier *last = curves.back();
                                 float newX = last->getPoint(numOfControlPointsPerCurve - 1).x;
                                 curves.pop_back();
-                                curves[curves.size() - 1]->clamp(RIGHTMOST, newX);
-                                curves[curves.size() - 1]->setNextCurve(NULL);
-                                for (int i = 0; i < numOfControlPointsPerCurve; i++) {
+                                curves.back()->clamp(RIGHTMOST, newX);
+                                curves.back()->setNextCurve(NULL);
+                                for (int i = 0; i < numOfControlPointsPerCurve - 1; i++) {
                                     controlPoints.pop_back();
                                 }
                             }
@@ -733,7 +733,6 @@ void init(){
     glEnable(GL_NORMALIZE);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
     glEnable(GL_LIGHT0);
     //    GLfloat light_direction[]={0,-1,0};
     GLfloat light_ambient[] = {0.5, 0.5, 0.5, 1};
