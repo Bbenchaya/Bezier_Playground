@@ -17,22 +17,24 @@
 * Press the number keys to change the number of inner control points in the curves. This would also reset the scene.
 * `esc` to exit.
 
+You can also run this under Linux: a `makefile` is provided, and there's some compiler flag in an appropriate header file.
+
 ## Example screenshots
 Initial setting:
 
-![image 1](https://github.com/Bbenchaya/Bezier_Playground/master/image1.png)
+![image 1](https://github.com/Bbenchaya/Bezier_Playground/blob/master/image1.png)
 
 
 
 After moving a couple of control points:
 
-![image 2](https://github.com/Bbenchaya/Bezier_Playground/master/image2.png)
+![image 2](https://github.com/Bbenchaya/Bezier_Playground/blob/master/image2.png)
 
 
 
 Transitioning to Bézier surface:
 
-![image 3](https://github.com/Bbenchaya/Bezier_Playground/master/image3.png)
+![image 3](https://github.com/Bbenchaya/Bezier_Playground/blob/master/image3.png)
 
 ## License
 
