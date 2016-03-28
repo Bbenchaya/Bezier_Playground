@@ -1,8 +1,40 @@
-# Computer Graphics, exercise 5
+# Bézier playground
 
-Bezier curves playground.
+[Bézier curves](https://en.wikipedia.org/wiki/B%C3%A9zier_curve) playground.
 
-### License
+## Dependencies
+* OpenGL
+
+## Usage
+* Right-click and hold a control point to move it.
+* Left-click on the left-most control point of a curve to delete it (a minimum of 2 curves would remain)/
+* Left-click on the left-most _inner_ control point of a curve: imagine a line between that point and the left-most control point. The right-most control point of the curve to the left would reposition to that line.
+* Middle-click and hold inside a curve's convex hull to move the curve in the XY plane.
+* Right-click in a curve's convex hull to split it in half.
+* Left-click in a curve's convex hull to transform the curve to a straight line.
+* Zoom-in\out when moving the mouse up\down while right-clicking outside of some curve's' convex hull.
+* Press `d` to create a [Bézier surface](https://en.wikipedia.org/wiki/B%C3%A9zier_surface) from the curve. Moving the mouse while right-clicking translates the scene, and while left-clicking would rotate it around the respective axes.
+* Press the number keys to change the number of inner control points in the curves. This would also reset the scene.
+* `esc` to exit.
+
+## Example screenshots
+Initial setting:
+
+![image 1](https://github.com/Bbenchaya/Bezier_Playground/master/image1.png)
+
+
+
+After moving a couple of control points:
+
+![image 2](https://github.com/Bbenchaya/Bezier_Playground/master/image2.png)
+
+
+
+Transitioning to Bézier surface:
+
+![image 3](https://github.com/Bbenchaya/Bezier_Playground/master/image3.png)
+
+## License
 
 The MIT License (MIT)
 
